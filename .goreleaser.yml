@@ -1,0 +1,43 @@
+project_name: gh_report
+
+release:
+  prerelease: auto
+
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod tidy
+    # you may remove this if you don't need go generate
+    - go generate ./...
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+
+archives:
+  - replacements:
+      darwin: macos
+      linux: linux
+      windows: windows
+      386: i386
+      amd64: x86_64
+    files:
+      - license
+      - readme.md
+    format_overrides:
+      - goos: windows
+        format: zip
+    wrap_in_directory: 'true'
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  name_template: "{{ incpatch .Version }}"
+
+changelog:
+  skip: true
