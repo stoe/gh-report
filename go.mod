@@ -6,6 +6,7 @@ require (
 	github.com/briandowns/spinner v1.18.0
 	github.com/cli/go-gh v0.0.1
 	github.com/fatih/color v1.13.0
+	github.com/shurcooL/graphql v0.0.0-20200928012149-18c5c3165e3a
 	github.com/spf13/cobra v1.3.0
 	gopkg.in/yaml.v2 v2.4.0
 )
