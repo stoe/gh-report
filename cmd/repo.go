@@ -82,14 +82,12 @@ type Organization struct {
 type Repository struct {
 	Name          string
 	NameWithOwner string
-	Owner         struct {
-		Login string
-	}
-	Description string
-	URL         string
-	Visibility  string
-	IsArchived  bool
-	IsTemplate  bool
+	Owner         Organization
+	Description   string
+	URL           string
+	Visibility    string
+	IsArchived    bool
+	IsTemplate    bool
 
 	DefaultBranchRef struct {
 		Name string
