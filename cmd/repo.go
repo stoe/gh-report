@@ -26,7 +26,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
+	"github.com/pterm/pterm"
 	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
 )
@@ -78,11 +78,14 @@ type Organization struct {
 type Repository struct {
 	Name          string
 	NameWithOwner string
-	Description   string
-	URL           string
-	Visibility    string
-	IsArchived    bool
-	IsTemplate    bool
+	Owner         struct {
+		Login string
+	}
+	Description string
+	URL         string
+	Visibility  string
+	IsArchived  bool
+	IsTemplate  bool
 
 	DefaultBranchRef struct {
 		Name string
@@ -179,6 +182,10 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 
 	sp.Stop()
 
+	var td = pterm.TableData{
+		{"owner", "repo", "visibility", "default_branch", "fork?", "disk", "created_at", "updated_at"},
+	}
+
 	for _, repo := range repositories {
 		if internal && repo.Visibility != "INTERNAL" {
 			continue
@@ -190,14 +197,21 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 			continue
 		}
 
-		fmt.Fprintf(color.Output,
-			"%s %s\n",
-			repo.NameWithOwner,
-			hiBlack(
-				fmt.Sprintf("[%s]", strings.ToLower(repo.Visibility)),
-			),
-		)
+		var data = []string{
+			repo.Owner.Login,
+			repo.Name,
+			strings.ToLower(repo.Visibility),
+			repo.DefaultBranchRef.Name,
+			fmt.Sprintf("%t", repo.IsFork),
+			fmt.Sprintf("%d", repo.DiskUsage),
+			repo.CreatedAt.Format("2006-01-02 15:04:05"),
+			repo.UpdatedAt.Format("2006-01-02 15:04:05"),
+		}
+
+		td = append(td, data)
 	}
+
+	pterm.DefaultTable.WithHasHeader().WithData(td).Render()
 
 	return err
 }
