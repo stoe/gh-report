@@ -22,20 +22,10 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"time"
-
-	"github.com/briandowns/spinner"
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
 var (
-	hiBlack = color.New(color.FgHiBlack).SprintFunc()
-	red     = color.New(color.FgRed).SprintFunc()
-	green   = color.New(color.FgGreen).SprintFunc()
-
-	sp = spinner.New(spinner.CharSets[14], 40*time.Millisecond)
-
 	actionsCmd = &cobra.Command{
 		Use:   "actions",
 		Short: "Report on GitHub Actions [permissions|uses]",

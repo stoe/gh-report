@@ -27,34 +27,55 @@ import (
 	"strings"
 	"time"
 
+	"github.com/briandowns/spinner"
 	"github.com/cli/go-gh"
 	"github.com/cli/go-gh/pkg/api"
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
 var (
+	enterprise string
+	owner      string
+	repo       string
+
 	hostname string
-	owner    string
-	repo     string
-	csvPath  string
+
+	csvPath string
 
 	user struct {
 		Login string `json:"login"`
 		Type  string `json:"type"`
 	}
 
-	restClient api.RESTClient
-	// graphqlClient api.GQLClient
+	restClient    api.RESTClient
+	graphqlClient api.GQLClient
+
+	hiBlack = color.New(color.FgHiBlack).SprintFunc()
+	red     = color.New(color.FgRed).SprintFunc()
+	green   = color.New(color.FgGreen).SprintFunc()
+
+	sp = spinner.New(spinner.CharSets[14], 40*time.Millisecond)
 
 	rootCmd = &cobra.Command{
 		Use:     "gh-report",
 		Short:   "gh cli extension to generate reports",
 		Long:    "gh cli extension to generate organization/user/repository reports",
 		Version: "0.0.0-development",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			var err error
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) (err error) {
+			if enterprise != "" && owner != "" {
+				return fmt.Errorf("cannot use --enterprise and --owner together")
+			}
 
-			if repo == "." && owner == "" {
+			if enterprise != "" && repo != "" {
+				return fmt.Errorf("cannot use --enterprise and --repo together")
+			}
+
+			if owner != "" && repo != "" {
+				return fmt.Errorf("cannot use --owner and --repo together")
+			}
+
+			if enterprise == "" && owner == "" && repo == "" {
 				var r gh.Repository
 
 				r, err = gh.CurrentRepository()
@@ -72,7 +93,9 @@ var (
 				repo = r[1]
 			}
 
-			err = restClient.Get(fmt.Sprintf("users/%s", owner), &user)
+			if owner != "" || repo != "" {
+				err = restClient.Get(fmt.Sprintf("users/%s", owner), &user)
+			}
 
 			return err
 		},
@@ -90,18 +113,19 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&hostname, "hostname", "", "GitHub Enterprise Server hostname")
+	repoCmd.PersistentFlags().StringVarP(&enterprise, "enterprise", "e", "", "GitHub Enterprise Cloud account")
 	rootCmd.PersistentFlags().StringVarP(&owner, "owner", "o", "", "GitHub account (organization or user account)")
-	rootCmd.PersistentFlags().StringVarP(&repo, "repo", "r", ".", "GitHub repository (owner/repo)")
+	rootCmd.PersistentFlags().StringVarP(&repo, "repo", "r", "", "GitHub repository (owner/repo)")
+
+	rootCmd.PersistentFlags().StringVar(&hostname, "hostname", "", "GitHub Enterprise Server hostname")
+
 	rootCmd.PersistentFlags().StringVar(&csvPath, "csv", "", "Path to CSV file")
 }
 
 func initConfig() {
-	var err error
-
 	opts := api.ClientOptions{
 		EnableCache: true,
-		Timeout:     5 * time.Second,
+		Timeout:     1 * time.Hour,
 	}
 
 	if hostname != "" {
@@ -109,9 +133,8 @@ func initConfig() {
 		opts.Host = hostname
 	}
 
-	restClient, err = gh.RESTClient(&opts)
-	// graphqlClient, err = gh.GQLClient(&opts)
-	ExitOnError(err)
+	restClient, _ = gh.RESTClient(&opts)
+	graphqlClient, _ = gh.GQLClient(&opts)
 }
 
 func ExitOnError(err error) {
