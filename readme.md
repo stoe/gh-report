@@ -13,29 +13,30 @@ $ gh extension install stoe/gh-report
 ## Usage
 
 ```txt
-$ gh-report [command] [flags]
+$ gh report [command] [flags]
 ```
 
 ```txt
 gh cli extension to generate organization/user/repository reports
 
 Usage:
-  gh-report [command]
+  gh report [command]
 
 Available Commands:
   actions     Report on GitHub Actions [permissions|uses]
   completion  Generate the autocompletion script for the specified shell
   help        Help about any command
+  repo        Report on GitHub repositories
 
 Flags:
       --csv string        Path to CSV file
-  -h, --help              help for gh-report
+  -h, --help              help for gh report
       --hostname string   GitHub Enterprise Server hostname
   -o, --owner string      GitHub account (organization or user account)
-  -r, --repo string       GitHub repository (owner/repo) (default ".")
-  -v, --version           version for gh-report
+  -r, --repo string       GitHub repository (owner/repo)
+  -v, --version           version for gh report
 
-Use "gh-report [command] --help" for more information about a command.
+Use "gh report [command] --help" for more information about a command.
 ```
 
 ## License
