@@ -53,7 +53,7 @@ var (
 					EndCursor   graphql.String
 				}
 				Nodes []Organization
-			} `graphql:"organizations(first: 100, after: $page)"`
+			} `graphql:"organizations(first: 100, after: $page, orderBy: {field: LOGIN, direction: ASC})"`
 		} `graphql:"enterprise(slug: $enterprise)"`
 	}
 
@@ -65,7 +65,7 @@ var (
 					EndCursor   graphql.String
 				}
 				Nodes []Repository
-			} `graphql:"repositories(first: 100, after: $page)"`
+			} `graphql:"repositories(first: 100, after: $page, orderBy: {field: NAME, direction: ASC})"`
 		} `graphql:"organization(login: $owner)"`
 	}
 
