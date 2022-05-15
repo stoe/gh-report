@@ -50,10 +50,10 @@ var (
 			Organizations struct {
 				PageInfo struct {
 					HasNextPage bool
-					EndCursor   string
+					EndCursor   graphql.String
 				}
 				Nodes []Organization
-			} `graphql:"organizations(first: 100, after: $page)"`
+			} `graphql:"organizations(first: 100, after: $page, orderBy: {field: LOGIN, direction: ASC})"`
 		} `graphql:"enterprise(slug: $enterprise)"`
 	}
 
@@ -62,10 +62,10 @@ var (
 			Repositories struct {
 				PageInfo struct {
 					HasNextPage bool
-					EndCursor   string
+					EndCursor   graphql.String
 				}
 				Nodes []Repository
-			} `graphql:"repositories(first: 100, after: $page)"`
+			} `graphql:"repositories(first: 100, after: $page, orderBy: {field: NAME, direction: ASC})"`
 		} `graphql:"organization(login: $owner)"`
 	}
 
@@ -82,14 +82,12 @@ type Organization struct {
 type Repository struct {
 	Name          string
 	NameWithOwner string
-	Owner         struct {
-		Login string
-	}
-	Description string
-	URL         string
-	Visibility  string
-	IsArchived  bool
-	IsTemplate  bool
+	Owner         Organization
+	Description   string
+	URL           string
+	Visibility    string
+	IsArchived    bool
+	IsTemplate    bool
 
 	DefaultBranchRef struct {
 		Name string
@@ -119,19 +117,6 @@ func init() {
 
 // GetUses returns GitHub Actions used in workflows
 func GetRepos(cmd *cobra.Command, args []string) (err error) {
-	e := enterprise
-
-	if e == "" {
-		e = owner
-	}
-
-	fmt.Printf(
-		"%s\n",
-		hiBlack(
-			fmt.Sprintf("garthering repositories for %s...", e),
-		),
-	)
-
 	sp.Start()
 
 	variables := map[string]interface{}{
@@ -172,13 +157,25 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 			"page":  (*graphql.String)(nil),
 		}
 
+		var i = 1
 		for {
+			sp.Suffix = fmt.Sprintf(
+				" fetching repositories %s %s",
+				org.Login,
+				hiBlack(fmt.Sprintf("(page %d)", i)),
+			)
+
 			graphqlClient.Query("RepoList", &repositoriesQuery, variables)
 			repositories = append(repositories, repositoriesQuery.Organization.Repositories.Nodes...)
 
 			if !repositoriesQuery.Organization.Repositories.PageInfo.HasNextPage {
 				break
 			}
+
+			i++
+
+			// sleep for 1 second to avoid rate limiting
+			time.Sleep(1 * time.Second)
 
 			variables["page"] = &repositoriesQuery.Organization.Repositories.PageInfo.EndCursor
 		}
