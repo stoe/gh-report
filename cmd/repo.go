@@ -26,9 +26,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/pterm/pterm"
 	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
+	"github.com/stoe/gh-report/utils"
 )
 
 var (
@@ -69,6 +71,8 @@ var (
 
 	organizations []Organization
 	repositories  []Repository
+
+	repoReport utils.CSVReport
 )
 
 type Organization struct {
@@ -186,6 +190,17 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 		{"owner", "repo", "visibility", "default_branch", "fork?", "disk", "created_at", "updated_at"},
 	}
 
+	// start CSV file
+	if csvPath != "" {
+		repoReport, err = utils.NewCSVReport(csvPath)
+
+		if err != nil {
+			return err
+		}
+
+		repoReport.SetHeader([]string{"owner", "repo", "visibility", "default_branch", "fork?", "disk", "created_at", "updated_at"})
+	}
+
 	for _, repo := range repositories {
 		if internal && repo.Visibility != "INTERNAL" {
 			continue
@@ -209,9 +224,21 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 		}
 
 		td = append(td, data)
+
+		if csvPath != "" {
+			repoReport.AddData(data)
+		}
 	}
 
 	pterm.DefaultTable.WithHasHeader().WithData(td).Render()
+
+	if csvPath != "" {
+		if err := repoReport.Save(); err != nil {
+			return err
+		}
+
+		fmt.Fprintf(color.Output, "\n%s %s\n", hiBlack("CSV saved to:"), csvPath)
+	}
 
 	return err
 }

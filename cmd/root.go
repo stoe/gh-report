@@ -123,8 +123,6 @@ func init() {
 }
 
 func initConfig() {
-	var err error
-
 	opts := api.ClientOptions{
 		EnableCache: true,
 		Timeout:     1 * time.Hour,
@@ -135,10 +133,8 @@ func initConfig() {
 		opts.Host = hostname
 	}
 
-	restClient, err = gh.RESTClient(&opts)
-	graphqlClient, err = gh.GQLClient(&opts)
-
-	ExitOnError(err)
+	restClient, _ = gh.RESTClient(&opts)
+	graphqlClient, _ = gh.GQLClient(&opts)
 }
 
 func ExitOnError(err error) {
