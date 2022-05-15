@@ -50,7 +50,7 @@ var (
 			Organizations struct {
 				PageInfo struct {
 					HasNextPage bool
-					EndCursor   string
+					EndCursor   graphql.String
 				}
 				Nodes []Organization
 			} `graphql:"organizations(first: 100, after: $page)"`
@@ -62,7 +62,7 @@ var (
 			Repositories struct {
 				PageInfo struct {
 					HasNextPage bool
-					EndCursor   string
+					EndCursor   graphql.String
 				}
 				Nodes []Repository
 			} `graphql:"repositories(first: 100, after: $page)"`
