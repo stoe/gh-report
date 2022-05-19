@@ -45,18 +45,6 @@ var (
 		RunE:  GetRepos,
 	}
 
-	enterpriseQuery struct {
-		Enterprise struct {
-			Organizations struct {
-				PageInfo struct {
-					HasNextPage bool
-					EndCursor   graphql.String
-				}
-				Nodes []Organization
-			} `graphql:"organizations(first: 100, after: $page, orderBy: {field: LOGIN, direction: ASC})"`
-		} `graphql:"enterprise(slug: $enterprise)"`
-	}
-
 	repositoriesQuery struct {
 		Organization struct {
 			Repositories struct {
@@ -69,15 +57,10 @@ var (
 		} `graphql:"organization(login: $owner)"`
 	}
 
-	organizations []Organization
-	repositories  []Repository
+	repositories []Repository
 
 	repoReport utils.CSVReport
 )
-
-type Organization struct {
-	Login string
-}
 
 type Repository struct {
 	Name          string
