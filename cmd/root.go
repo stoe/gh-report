@@ -31,6 +31,7 @@ import (
 	"github.com/cli/go-gh"
 	"github.com/cli/go-gh/pkg/api"
 	"github.com/fatih/color"
+	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
 )
 
@@ -100,7 +101,25 @@ var (
 			return err
 		},
 	}
+
+	enterpriseQuery struct {
+		Enterprise struct {
+			Organizations struct {
+				PageInfo struct {
+					HasNextPage bool
+					EndCursor   graphql.String
+				}
+				Nodes []Organization
+			} `graphql:"organizations(first: 100, after: $page, orderBy: {field: LOGIN, direction: ASC})"`
+		} `graphql:"enterprise(slug: $enterprise)"`
+	}
+
+	organizations []Organization
 )
+
+type Organization struct {
+	Login string
+}
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
@@ -113,7 +132,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	repoCmd.PersistentFlags().StringVarP(&enterprise, "enterprise", "e", "", "GitHub Enterprise Cloud account")
+	rootCmd.PersistentFlags().StringVarP(&enterprise, "enterprise", "e", "", "GitHub Enterprise Cloud account")
 	rootCmd.PersistentFlags().StringVarP(&owner, "owner", "o", "", "GitHub account (organization or user account)")
 	rootCmd.PersistentFlags().StringVarP(&repo, "repo", "r", "", "GitHub repository (owner/repo)")
 
