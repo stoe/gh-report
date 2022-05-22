@@ -36,6 +36,8 @@ import (
 )
 
 var (
+	noCache = false
+
 	enterprise string
 	owner      string
 	repo       string
@@ -132,6 +134,8 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
+	rootCmd.PersistentFlags().BoolVar(&noCache, "no-cache", false, "do not cache results for one hour (default: false)")
+
 	rootCmd.PersistentFlags().StringVarP(&enterprise, "enterprise", "e", "", "GitHub Enterprise Cloud account")
 	rootCmd.PersistentFlags().StringVarP(&owner, "owner", "o", "", "GitHub account (organization or user account)")
 	rootCmd.PersistentFlags().StringVarP(&repo, "repo", "r", "", "GitHub repository (owner/repo)")
@@ -143,8 +147,8 @@ func init() {
 
 func initConfig() {
 	opts := api.ClientOptions{
-		EnableCache: true,
-		Timeout:     1 * time.Hour,
+		EnableCache: !noCache,
+		CacheTTL:    time.Hour,
 	}
 
 	if hostname != "" {
