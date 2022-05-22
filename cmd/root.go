@@ -64,7 +64,7 @@ var (
 	rootCmd = &cobra.Command{
 		Use:     "gh-report",
 		Short:   "gh cli extension to generate reports",
-		Long:    "gh cli extension to generate organization/user/repository reports",
+		Long:    `gh cli extension to generate enterprise/organization/user/repository reports`,
 		Version: "0.0.0-development",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) (err error) {
 			if enterprise != "" && owner != "" {
