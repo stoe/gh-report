@@ -17,24 +17,28 @@ $ gh report [command] [flags]
 ```
 
 ```txt
-gh cli extension to generate organization/user/repository reports
+gh cli extension to generate enterprise/organization/user/repository reports
 
 Usage:
   gh report [command]
 
 Available Commands:
-  actions     Report on GitHub Actions [permissions|uses]
-  completion  Generate the autocompletion script for the specified shell
-  help        Help about any command
-  repo        Report on GitHub repositories
+  actions         Report on GitHub Actions [permissions|uses]
+  completion      Generate the autocompletion script for the specified shell
+  help            Help about any command
+  repo            Report on GitHub repositories
+  verified-emails List enterprise/organization members' verified emails
 
 Flags:
-      --csv string        Path to CSV file
-  -h, --help              help for gh report
-      --hostname string   GitHub Enterprise Server hostname
-  -o, --owner string      GitHub account (organization or user account)
-  -r, --repo string       GitHub repository (owner/repo)
-  -v, --version           version for gh report
+      --csv string          Path to CSV file
+  -e, --enterprise string   GitHub Enterprise Cloud account
+  -h, --help                help for gh-report
+      --hostname string     GitHub Enterprise Server hostname
+      --no-cache            do not cache results for one hour (default: false)
+  -o, --owner string        GitHub account (organization or user account)
+  -r, --repo string         GitHub repository (owner/repo)
+      --token string        GitHub Personal Access Token (default: "")
+  -v, --version             version for gh report
 
 Use "gh report [command] --help" for more information about a command.
 ```
