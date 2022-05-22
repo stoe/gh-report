@@ -36,10 +36,13 @@ import (
 )
 
 var (
+	noCache = false
+
 	enterprise string
 	owner      string
 	repo       string
 
+	token    string
 	hostname string
 
 	csvPath string
@@ -61,7 +64,7 @@ var (
 	rootCmd = &cobra.Command{
 		Use:     "gh-report",
 		Short:   "gh cli extension to generate reports",
-		Long:    "gh cli extension to generate organization/user/repository reports",
+		Long:    `gh cli extension to generate enterprise/organization/user/repository reports`,
 		Version: "0.0.0-development",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) (err error) {
 			if enterprise != "" && owner != "" {
@@ -132,10 +135,13 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
+	rootCmd.PersistentFlags().BoolVar(&noCache, "no-cache", false, "do not cache results for one hour (default: false)")
+
 	rootCmd.PersistentFlags().StringVarP(&enterprise, "enterprise", "e", "", "GitHub Enterprise Cloud account")
 	rootCmd.PersistentFlags().StringVarP(&owner, "owner", "o", "", "GitHub account (organization or user account)")
 	rootCmd.PersistentFlags().StringVarP(&repo, "repo", "r", "", "GitHub repository (owner/repo)")
 
+	rootCmd.PersistentFlags().StringVar(&token, "token", "", "GitHub Personal Access Token (default: \"\")")
 	rootCmd.PersistentFlags().StringVar(&hostname, "hostname", "", "GitHub Enterprise Server hostname")
 
 	rootCmd.PersistentFlags().StringVar(&csvPath, "csv", "", "Path to CSV file")
@@ -143,8 +149,12 @@ func init() {
 
 func initConfig() {
 	opts := api.ClientOptions{
-		EnableCache: true,
-		Timeout:     1 * time.Hour,
+		EnableCache: !noCache,
+		CacheTTL:    time.Hour,
+	}
+
+	if token != "" {
+		opts.AuthToken = token
 	}
 
 	if hostname != "" {
@@ -158,8 +168,11 @@ func initConfig() {
 
 func ExitOnError(err error) {
 	if err != nil {
-		e := fmt.Errorf("error: %w", err)
-		fmt.Println(e)
+		rootCmd.PrintErrln(red(err.Error()))
+		fmt.Println()
+		rootCmd.Help()
+
+		fmt.Println()
 		os.Exit(1)
 	}
 }
