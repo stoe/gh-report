@@ -100,6 +100,10 @@ func init() {
 
 // GetUses returns GitHub Actions used in workflows
 func GetRepos(cmd *cobra.Command, args []string) (err error) {
+	if hostname != "" {
+		ExitOnError(fmt.Errorf("GitHub Enterprise Server not supported for this report"))
+	}
+
 	sp.Start()
 
 	variables := map[string]interface{}{
