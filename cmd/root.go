@@ -42,6 +42,7 @@ var (
 	owner      string
 	repo       string
 
+	token    string
 	hostname string
 
 	csvPath string
@@ -140,6 +141,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&owner, "owner", "o", "", "GitHub account (organization or user account)")
 	rootCmd.PersistentFlags().StringVarP(&repo, "repo", "r", "", "GitHub repository (owner/repo)")
 
+	rootCmd.PersistentFlags().StringVar(&token, "token", "", "GitHub Personal Access Token (default: \"\")")
 	rootCmd.PersistentFlags().StringVar(&hostname, "hostname", "", "GitHub Enterprise Server hostname")
 
 	rootCmd.PersistentFlags().StringVar(&csvPath, "csv", "", "Path to CSV file")
@@ -149,6 +151,10 @@ func initConfig() {
 	opts := api.ClientOptions{
 		EnableCache: !noCache,
 		CacheTTL:    time.Hour,
+	}
+
+	if token != "" {
+		opts.AuthToken = token
 	}
 
 	if hostname != "" {
