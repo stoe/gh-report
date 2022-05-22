@@ -168,8 +168,11 @@ func initConfig() {
 
 func ExitOnError(err error) {
 	if err != nil {
-		e := fmt.Errorf("error: %w", err)
-		fmt.Println(e)
+		rootCmd.PrintErrln(red(err.Error()))
+		fmt.Println()
+		rootCmd.Help()
+
+		fmt.Println()
 		os.Exit(1)
 	}
 }
