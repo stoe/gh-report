@@ -132,8 +132,9 @@ func GetUserEmails(cmd *cobra.Command, args []string) (err error) {
 		repoReport.SetHeader([]string{"login", "full_name", "email", "verified_emails"})
 	}
 
-	for _, member := range members {
+	var verifiedEmails = make(map[string][]string)
 
+	for _, member := range members {
 		var data = []string{
 			member.Login,
 			member.Name,
@@ -141,10 +142,14 @@ func GetUserEmails(cmd *cobra.Command, args []string) (err error) {
 			strings.Join(member.OrganizationVerifiedDomainEmails, ","),
 		}
 
-		td = append(td, data)
+		if _, ok := verifiedEmails[member.Login]; !ok {
+			verifiedEmails[member.Login] = data
 
-		if csvPath != "" {
-			repoReport.AddData(data)
+			td = append(td, data)
+
+			if csvPath != "" {
+				repoReport.AddData(data)
+			}
 		}
 	}
 
