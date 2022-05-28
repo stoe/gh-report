@@ -231,8 +231,8 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 			fmt.Sprintf("%t", repo.IsFork),
 			repo.DefaultBranchRef.Name,
 			fmt.Sprintf("%d", repo.DiskUsage),
-			repo.CreatedAt.Format("2006-01-02 15:04:05"),
-			repo.UpdatedAt.Format("2006-01-02 15:04:05"),
+			repo.CreatedAt.Format("2006-01-02"),
+			repo.UpdatedAt.Format("2006-01-02"),
 		}
 
 		td = append(td, data)
@@ -242,7 +242,7 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 		}
 	}
 
-	pterm.DefaultTable.WithHasHeader().WithData(td).Render()
+	pterm.DefaultTable.WithHasHeader().WithHeaderRowSeparator("-").WithData(td).Render()
 
 	if csvPath != "" {
 		if err := repoReport.Save(); err != nil {
