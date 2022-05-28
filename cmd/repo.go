@@ -198,7 +198,7 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 	sp.Stop()
 
 	var td = pterm.TableData{
-		{"owner", "repo", "visibility", "default_branch", "fork?", "disk", "created_at", "updated_at"},
+		{"owner", "repo", "visibility", "archived?", "fork?", "default_branch", "disk", "created_at", "updated_at"},
 	}
 
 	// start CSV file
@@ -209,7 +209,7 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 			return err
 		}
 
-		repoReport.SetHeader([]string{"owner", "repo", "visibility", "default_branch", "fork?", "disk", "created_at", "updated_at"})
+		repoReport.SetHeader([]string{"owner", "repo", "visibility", "archived?", "fork?", "default_branch", "disk", "created_at", "updated_at"})
 	}
 
 	for _, repo := range repositories {
@@ -227,8 +227,9 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 			repo.Owner.Login,
 			repo.Name,
 			strings.ToLower(repo.Visibility),
-			repo.DefaultBranchRef.Name,
+			fmt.Sprintf("%t", repo.IsArchived),
 			fmt.Sprintf("%t", repo.IsFork),
+			repo.DefaultBranchRef.Name,
 			fmt.Sprintf("%d", repo.DiskUsage),
 			repo.CreatedAt.Format("2006-01-02 15:04:05"),
 			repo.UpdatedAt.Format("2006-01-02 15:04:05"),
