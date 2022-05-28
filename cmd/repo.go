@@ -45,16 +45,16 @@ var (
 		RunE:  GetRepos,
 	}
 
-	repositoriesQuery struct {
+	orgRepositoriesQuery struct {
 		Organization struct {
-			Repositories struct {
-				PageInfo struct {
-					HasNextPage bool
-					EndCursor   graphql.String
-				}
-				Nodes []Repository
-			} `graphql:"repositories(first: 100, after: $page, orderBy: {field: NAME, direction: ASC})"`
+			Repositories Repos `graphql:"repositories(first: 100, after: $page, orderBy: {field: NAME, direction: ASC})"`
 		} `graphql:"organization(login: $owner)"`
+	}
+
+	userRepositoriesQuery struct {
+		User struct {
+			Repositories Repos `graphql:"repositories(first: 100, after: $page, orderBy: {field: NAME, direction: ASC}, affiliations: OWNER)"`
+		} `graphql:"user(login: $owner)"`
 	}
 
 	repositories []Repository
@@ -62,32 +62,35 @@ var (
 	repoReport utils.CSVReport
 )
 
-type Repository struct {
-	Name          string
-	NameWithOwner string
-	Owner         Organization
-	Description   string
-	URL           string
-	Visibility    string
-	IsArchived    bool
-	IsTemplate    bool
+type Repos struct {
+	PageInfo struct {
+		HasNextPage bool
+		EndCursor   graphql.String
+	}
+	Nodes []Repository
+}
 
+type Repository struct {
+	Name             string
+	NameWithOwner    string
+	Owner            Organization
+	Description      string
+	URL              string
+	Visibility       string
+	IsArchived       bool
+	IsTemplate       bool
 	DefaultBranchRef struct {
 		Name string
 	}
-
 	HasIssuesEnabled   bool
 	HasProjectsEnabled bool
 	HasWikiEnabled     bool
-
-	IsFork         bool
-	ForkCount      int
-	ForkingAllowed bool
-
-	DiskUsage int
-
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	IsFork             bool
+	ForkCount          int
+	ForkingAllowed     bool
+	DiskUsage          int
+	CreatedAt          time.Time
+	UpdatedAt          time.Time
 }
 
 func init() {
@@ -133,29 +136,24 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 		return fmt.Errorf("Repository not implemented")
 	}
 
+	var i = 1
 	if user.Type == "User" {
-		sp.Stop()
-		return fmt.Errorf("%s not implemented", user.Type)
-	}
-
-	for _, org := range organizations {
 		variables := map[string]interface{}{
-			"owner": graphql.String(org.Login),
+			"owner": graphql.String(user.Login),
 			"page":  (*graphql.String)(nil),
 		}
 
-		var i = 1
 		for {
 			sp.Suffix = fmt.Sprintf(
-				" fetching repositories %s %s",
-				org.Login,
+				" fetching user repositories %s %s",
+				user.Login,
 				hiBlack(fmt.Sprintf("(page %d)", i)),
 			)
 
-			graphqlClient.Query("RepoList", &repositoriesQuery, variables)
-			repositories = append(repositories, repositoriesQuery.Organization.Repositories.Nodes...)
+			graphqlClient.Query("RepoList", &userRepositoriesQuery, variables)
+			repositories = append(repositories, userRepositoriesQuery.User.Repositories.Nodes...)
 
-			if !repositoriesQuery.Organization.Repositories.PageInfo.HasNextPage {
+			if !userRepositoriesQuery.User.Repositories.PageInfo.HasNextPage {
 				break
 			}
 
@@ -164,14 +162,43 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 			// sleep for 1 second to avoid rate limiting
 			time.Sleep(1 * time.Second)
 
-			variables["page"] = &repositoriesQuery.Organization.Repositories.PageInfo.EndCursor
+			variables["page"] = &userRepositoriesQuery.User.Repositories.PageInfo.EndCursor
+		}
+	} else if user.Type == "Organization" || len(organizations) > 0 {
+		for _, org := range organizations {
+			variables := map[string]interface{}{
+				"owner": graphql.String(org.Login),
+				"page":  (*graphql.String)(nil),
+			}
+
+			for {
+				sp.Suffix = fmt.Sprintf(
+					" fetching organization repositories %s %s",
+					org.Login,
+					hiBlack(fmt.Sprintf("(page %d)", i)),
+				)
+
+				graphqlClient.Query("RepoList", &orgRepositoriesQuery, variables)
+				repositories = append(repositories, orgRepositoriesQuery.Organization.Repositories.Nodes...)
+
+				if !orgRepositoriesQuery.Organization.Repositories.PageInfo.HasNextPage {
+					break
+				}
+
+				i++
+
+				// sleep for 1 second to avoid rate limiting
+				time.Sleep(1 * time.Second)
+
+				variables["page"] = &orgRepositoriesQuery.Organization.Repositories.PageInfo.EndCursor
+			}
 		}
 	}
 
 	sp.Stop()
 
 	var td = pterm.TableData{
-		{"owner", "repo", "visibility", "default_branch", "fork?", "disk", "created_at", "updated_at"},
+		{"owner", "repo", "visibility", "archived?", "fork?", "default_branch", "disk", "created_at", "updated_at"},
 	}
 
 	// start CSV file
@@ -182,7 +209,7 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 			return err
 		}
 
-		repoReport.SetHeader([]string{"owner", "repo", "visibility", "default_branch", "fork?", "disk", "created_at", "updated_at"})
+		repoReport.SetHeader([]string{"owner", "repo", "visibility", "archived?", "fork?", "default_branch", "disk", "created_at", "updated_at"})
 	}
 
 	for _, repo := range repositories {
@@ -200,11 +227,12 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 			repo.Owner.Login,
 			repo.Name,
 			strings.ToLower(repo.Visibility),
-			repo.DefaultBranchRef.Name,
+			fmt.Sprintf("%t", repo.IsArchived),
 			fmt.Sprintf("%t", repo.IsFork),
+			repo.DefaultBranchRef.Name,
 			fmt.Sprintf("%d", repo.DiskUsage),
-			repo.CreatedAt.Format("2006-01-02 15:04:05"),
-			repo.UpdatedAt.Format("2006-01-02 15:04:05"),
+			repo.CreatedAt.Format("2006-01-02"),
+			repo.UpdatedAt.Format("2006-01-02"),
 		}
 
 		td = append(td, data)
@@ -214,7 +242,7 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 		}
 	}
 
-	pterm.DefaultTable.WithHasHeader().WithData(td).Render()
+	pterm.DefaultTable.WithHasHeader().WithHeaderRowSeparator("-").WithData(td).Render()
 
 	if csvPath != "" {
 		if err := repoReport.Save(); err != nil {

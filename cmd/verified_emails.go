@@ -178,7 +178,7 @@ func GetUserEmails(cmd *cobra.Command, args []string) (err error) {
 		}
 	}
 
-	pterm.DefaultTable.WithHasHeader().WithData(td).Render()
+	pterm.DefaultTable.WithHasHeader().WithHeaderRowSeparator("-").WithData(td).Render()
 
 	if csvPath != "" {
 		if err := repoReport.Save(); err != nil {
