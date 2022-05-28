@@ -30,6 +30,7 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/cli/go-gh"
 	"github.com/cli/go-gh/pkg/api"
+	"github.com/cli/go-gh/pkg/repository"
 	"github.com/fatih/color"
 	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
@@ -80,7 +81,7 @@ var (
 			}
 
 			if enterprise == "" && owner == "" && repo == "" {
-				var r gh.Repository
+				var r repository.Repository
 
 				r, err = gh.CurrentRepository()
 
@@ -169,10 +170,6 @@ func initConfig() {
 func ExitOnError(err error) {
 	if err != nil {
 		rootCmd.PrintErrln(red(err.Error()))
-		fmt.Println()
-		rootCmd.Help()
-
-		fmt.Println()
 		os.Exit(1)
 	}
 }
