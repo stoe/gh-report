@@ -58,7 +58,6 @@ var (
 	restClient    api.RESTClient
 	graphqlClient api.GQLClient
 
-	blue    = color.New(color.FgCyan).SprintFunc()
 	bold    = color.New(color.Bold).SprintFunc()
 	hiBlack = color.New(color.FgHiBlack).SprintFunc()
 	red     = color.New(color.FgRed).SprintFunc()
