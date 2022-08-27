@@ -56,9 +56,11 @@ var (
 	restClient    api.RESTClient
 	graphqlClient api.GQLClient
 
+	blue    = color.New(color.FgCyan).SprintFunc()
+	bold    = color.New(color.Bold).SprintFunc()
+	green   = color.New(color.FgGreen).SprintFunc()
 	hiBlack = color.New(color.FgHiBlack).SprintFunc()
 	red     = color.New(color.FgRed).SprintFunc()
-	green   = color.New(color.FgGreen).SprintFunc()
 
 	sp = spinner.New(spinner.CharSets[14], 40*time.Millisecond)
 
