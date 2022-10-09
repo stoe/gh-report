@@ -63,47 +63,11 @@ var (
 	sp = spinner.New(spinner.CharSets[14], 40*time.Millisecond)
 
 	rootCmd = &cobra.Command{
-		Use:     "gh-report",
-		Short:   "gh cli extension to generate reports",
-		Long:    `gh cli extension to generate enterprise/organization/user/repository reports`,
-		Version: "0.0.0-development",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) (err error) {
-			if enterprise != "" && owner != "" {
-				return fmt.Errorf("cannot use --enterprise and --owner together")
-			}
-
-			if enterprise != "" && repo != "" {
-				return fmt.Errorf("cannot use --enterprise and --repo together")
-			}
-
-			if owner != "" && repo != "" {
-				return fmt.Errorf("cannot use --owner and --repo together")
-			}
-
-			if enterprise == "" && owner == "" && repo == "" {
-				var r repository.Repository
-
-				r, err = gh.CurrentRepository()
-
-				if err != nil {
-					return err
-				}
-
-				owner = r.Owner()
-				repo = r.Name()
-			} else if strings.Contains(repo, "/") && owner == "" {
-				r := strings.Split(repo, "/")
-
-				owner = r[0]
-				repo = r[1]
-			}
-
-			if owner != "" || repo != "" {
-				err = restClient.Get(fmt.Sprintf("users/%s", owner), &user)
-			}
-
-			return err
-		},
+		Use:               "gh-report",
+		Short:             "gh cli extension to generate reports",
+		Long:              `gh cli extension to generate enterprise/organization/user/repository reports`,
+		Version:           "0.0.0-development",
+		PersistentPreRunE: run,
 	}
 
 	enterpriseQuery struct {
@@ -165,6 +129,44 @@ func initConfig() {
 
 	restClient, _ = gh.RESTClient(&opts)
 	graphqlClient, _ = gh.GQLClient(&opts)
+}
+
+func run(cmd *cobra.Command, args []string) (err error) {
+	if enterprise != "" && owner != "" {
+		return fmt.Errorf("cannot use --enterprise and --owner together")
+	}
+
+	if enterprise != "" && repo != "" {
+		return fmt.Errorf("cannot use --enterprise and --repo together")
+	}
+
+	if owner != "" && repo != "" {
+		return fmt.Errorf("cannot use --owner and --repo together")
+	}
+
+	if enterprise == "" && owner == "" && repo == "" {
+		var r repository.Repository
+
+		r, err = gh.CurrentRepository()
+
+		if err != nil {
+			return err
+		}
+
+		owner = r.Owner()
+		repo = r.Name()
+	} else if strings.Contains(repo, "/") && owner == "" {
+		r := strings.Split(repo, "/")
+
+		owner = r[0]
+		repo = r[1]
+	}
+
+	if owner != "" || repo != "" {
+		err = restClient.Get(fmt.Sprintf("users/%s", owner), &user)
+	}
+
+	return err
 }
 
 func ExitOnError(err error) {
