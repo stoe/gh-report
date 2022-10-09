@@ -110,6 +110,12 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&hostname, "hostname", "", "GitHub Enterprise Server hostname")
 
 	rootCmd.PersistentFlags().StringVar(&csvPath, "csv", "", "Path to CSV file")
+
+	rootCmd.MarkFlagsMutuallyExclusive("enterprise", "owner")
+	rootCmd.MarkFlagsMutuallyExclusive("enterprise", "repo")
+	rootCmd.MarkFlagsMutuallyExclusive("owner", "repo")
+
+	rootCmd.MarkFlagRequired("token")
 }
 
 func initConfig() {
@@ -132,18 +138,6 @@ func initConfig() {
 }
 
 func run(cmd *cobra.Command, args []string) (err error) {
-	if enterprise != "" && owner != "" {
-		return fmt.Errorf("cannot use --enterprise and --owner together")
-	}
-
-	if enterprise != "" && repo != "" {
-		return fmt.Errorf("cannot use --enterprise and --repo together")
-	}
-
-	if owner != "" && repo != "" {
-		return fmt.Errorf("cannot use --owner and --repo together")
-	}
-
 	if enterprise == "" && owner == "" && repo == "" {
 		var r repository.Repository
 
