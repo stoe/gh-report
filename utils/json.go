@@ -45,7 +45,7 @@ func SaveJsonReport(p string, data interface{}) error {
 	encoder := json.NewEncoder(file)
 	encoder.Encode(data)
 
-	fmt.Fprintf(color.Output, "\n%s %s\n", hiBlack("JSON saved to:"), p)
+	fmt.Fprintf(color.Output, "%s %s\n", hiBlack("JSON saved to:"), p)
 
 	return nil
 }
