@@ -74,7 +74,15 @@ func init() {
 
 func GetUserEmails(cmd *cobra.Command, args []string) (err error) {
 	if hostname != "" {
-		ExitOnError(fmt.Errorf("GitHub Enterprise Server not supported for this report"))
+		return fmt.Errorf("GitHub Enterprise Server not (yet) supported for this report")
+	}
+
+	if repo != "" {
+		return fmt.Errorf("Repository not supported for this report")
+	}
+
+	if user.Type == "User" {
+		return fmt.Errorf("%s not supported for this report", user.Type)
 	}
 
 	sp.Start()
@@ -99,16 +107,6 @@ func GetUserEmails(cmd *cobra.Command, args []string) (err error) {
 
 	if owner != "" {
 		organizations = append(organizations, Organization{Login: owner})
-	}
-
-	if repo != "" {
-		sp.Stop()
-		return fmt.Errorf("Repository not implemented")
-	}
-
-	if user.Type == "User" {
-		sp.Stop()
-		return fmt.Errorf("%s not implemented", user.Type)
 	}
 	for _, org := range organizations {
 		variables := map[string]interface{}{

@@ -104,7 +104,11 @@ func init() {
 // GetUses returns GitHub Actions used in workflows
 func GetRepos(cmd *cobra.Command, args []string) (err error) {
 	if hostname != "" {
-		ExitOnError(fmt.Errorf("GitHub Enterprise Server not supported for this report"))
+		return fmt.Errorf("GitHub Enterprise Server not (yet) supported for this report")
+	}
+
+	if repo != "" {
+		return fmt.Errorf("Repository not (yet) supported for this report")
 	}
 
 	sp.Start()
@@ -129,11 +133,6 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 
 	if owner != "" {
 		organizations = append(organizations, Organization{Login: owner})
-	}
-
-	if repo != "" {
-		sp.Stop()
-		return fmt.Errorf("Repository not implemented")
 	}
 
 	var i = 1
