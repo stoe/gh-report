@@ -1,6 +1,6 @@
 module github.com/stoe/gh-report
 
-go 1.18
+go 1.19
 
 require (
 	github.com/briandowns/spinner v1.19.0
