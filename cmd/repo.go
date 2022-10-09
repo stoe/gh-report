@@ -144,8 +144,8 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 
 		for {
 			sp.Suffix = fmt.Sprintf(
-				" fetching user repositories %s %s",
-				user.Login,
+				" fetching repositories report %s %s",
+				cyan(user.Login),
 				hiBlack(fmt.Sprintf("(page %d)", i)),
 			)
 
@@ -172,8 +172,8 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 
 			for {
 				sp.Suffix = fmt.Sprintf(
-					" fetching organization repositories %s %s",
-					org.Login,
+					" fetching repositories report %s %s",
+					cyan(org.Login),
 					hiBlack(fmt.Sprintf("(page %d)", i)),
 				)
 

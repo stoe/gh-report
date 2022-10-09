@@ -58,7 +58,7 @@ var (
 
 	hiBlack = color.New(color.FgHiBlack).SprintFunc()
 	red     = color.New(color.FgRed).SprintFunc()
-	green   = color.New(color.FgGreen).SprintFunc()
+	cyan    = color.New(color.FgCyan).SprintFunc()
 
 	sp = spinner.New(spinner.CharSets[14], 40*time.Millisecond)
 

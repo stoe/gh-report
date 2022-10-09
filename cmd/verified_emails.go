@@ -117,8 +117,8 @@ func GetUserEmails(cmd *cobra.Command, args []string) (err error) {
 		var i = 1
 		for {
 			sp.Suffix = fmt.Sprintf(
-				" fetching user emails %s %s",
-				org.Login,
+				" fetching verified emails report %s %s",
+				cyan(org.Login),
 				hiBlack(fmt.Sprintf("(page %d)", i)),
 			)
 
