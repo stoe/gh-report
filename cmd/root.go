@@ -38,6 +38,7 @@ import (
 
 var (
 	noCache = false
+	silent  = false
 
 	enterprise string
 	owner      string
@@ -46,7 +47,8 @@ var (
 	token    string
 	hostname string
 
-	csvPath string
+	csvPath  string
+	jsonPath string
 
 	user struct {
 		Login string `json:"login"`
@@ -85,9 +87,11 @@ var (
 	organizations []Organization
 )
 
-type Organization struct {
-	Login string
-}
+type (
+	Organization struct {
+		Login string
+	}
+)
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
@@ -101,6 +105,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().BoolVar(&noCache, "no-cache", false, "do not cache results for one hour (default: false)")
+	rootCmd.PersistentFlags().BoolVar(&silent, "silent", false, "do not print any output (default: false)")
 
 	rootCmd.PersistentFlags().StringVarP(&enterprise, "enterprise", "e", "", "GitHub Enterprise Cloud account")
 	rootCmd.PersistentFlags().StringVarP(&owner, "owner", "o", "", "GitHub account (organization or user account)")
@@ -110,6 +115,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&hostname, "hostname", "", "GitHub Enterprise Server hostname")
 
 	rootCmd.PersistentFlags().StringVar(&csvPath, "csv", "", "Path to CSV file")
+	rootCmd.PersistentFlags().StringVar(&jsonPath, "json", "", "Path to JSON file")
 
 	rootCmd.MarkFlagsMutuallyExclusive("enterprise", "owner")
 	rootCmd.MarkFlagsMutuallyExclusive("enterprise", "repo")
