@@ -22,61 +22,30 @@ THE SOFTWARE.
 package utils
 
 import (
-	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/fatih/color"
 )
 
-// Report is the interface that wraps report information methods.
-type (
-	CSVReport interface {
-		SetHeader([]string)
-		AddData([]string)
-		Save() error
+func SaveJsonReport(p string, data interface{}) error {
+	if _, err := os.Stat(filepath.Dir(p)); err != nil {
+		return fmt.Errorf("failed to open directory, error: %w", err)
 	}
 
-	// report is the implementation of Report
-	Report struct {
-		path   string
-		file   *os.File
-		writer *csv.Writer
-	}
-)
-
-// New returns a new Report instance.
-func NewCSVReport(p string) (*Report, error) {
 	file, err := os.Create(p)
-
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to create file, error: %w", err)
 	}
 
-	return &Report{
-		path:   p,
-		file:   file,
-		writer: csv.NewWriter(file),
-	}, nil
-}
+	defer file.Close()
 
-func (r *Report) SetPath(p string) {
-	r.path = p
-}
+	encoder := json.NewEncoder(file)
+	encoder.Encode(data)
 
-func (r *Report) SetHeader(h []string) {
-	r.writer.Write(h)
-}
-
-func (r *Report) AddData(d []string) {
-	r.writer.Write(d)
-	r.writer.Flush()
-}
-
-func (r *Report) Save() error {
-	r.file.Close()
-
-	fmt.Fprintf(color.Output, "\n%s %s\n", hiBlack("CSV saved to:"), r.path)
+	fmt.Fprintf(color.Output, "\n%s %s\n", hiBlack("JSON saved to:"), p)
 
 	return nil
 }

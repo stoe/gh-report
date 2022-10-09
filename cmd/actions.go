@@ -27,7 +27,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/pterm/pterm"
 	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
@@ -43,8 +42,8 @@ var (
 		RunE:  GetActionsReport,
 	}
 
-	exclude = false
-	// actionsReport utils.CSVReport
+	exclude       = false
+	actionsReport utils.CSVReport
 
 	ActionUsesQuery struct {
 		RepositoryOwner struct {
@@ -99,20 +98,22 @@ type (
 	}
 
 	ActionUsesReport struct {
-		Owner     string
-		Name      string
-		Workflows []ActionWorkflow
+		Owner     string           `json:"owner"`
+		Repo      string           `json:"repo"`
+		Workflows []ActionWorkflow `json:"workflows"`
 	}
 
 	ActionWorkflow struct {
-		Path        string
-		Uses        []ActionUses
-		Permissions []string
+		Path        string       `json:"path"`
+		File        string       `json:"file"`
+		Uses        []ActionUses `json:"uses"`
+		Permissions []string     `json:"permissions"`
 	}
 
 	ActionUses struct {
-		Action  string
-		Version string
+		Action  string `json:"action"`
+		Version string `json:"version"`
+		URL     string `json:"url"`
 	}
 
 	ActionPermissions struct {
@@ -258,6 +259,7 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 					uses = append(uses, ActionUses{
 						Action:  an,
 						Version: av,
+						URL:     fmt.Sprintf("https://github.com/%s/tree/%s", an, av),
 					})
 				}
 
@@ -285,7 +287,11 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 				}
 
 				wfs = append(wfs, ActionWorkflow{
-					Path:        e.Path,
+					Path: e.Path,
+					File: fmt.Sprintf(
+						"https://github.com/%s/blob/HEAD/%s",
+						r.NameWithOwner, e.Path,
+					),
 					Uses:        uses,
 					Permissions: t,
 				})
@@ -293,7 +299,7 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 
 			res = append(res, ActionUsesReport{
 				Owner:     r.Owner.Login,
-				Name:      r.Name,
+				Repo:      r.Name,
 				Workflows: wfs,
 			})
 		}
@@ -310,20 +316,20 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 
 	// start CSV file
 	if csvPath != "" {
-		repoReport, err = utils.NewCSVReport(csvPath)
+		actionsReport, err = utils.NewCSVReport(csvPath)
 
 		if err != nil {
 			return err
 		}
 
-		repoReport.SetHeader([]string{"owner", "repo", "workflow_path", "uses", "permissions"})
+		actionsReport.SetHeader([]string{"owner", "repo", "workflow_path", "uses", "permissions"})
 	}
 
 	for _, r := range res {
 		for _, w := range r.Workflows {
 			var data = []string{
 				r.Owner,
-				r.Name,
+				r.Repo,
 				w.Path,
 				strings.Join(UsesToString(w.Uses), ", "),
 				strings.Join(w.Permissions, ", "),
@@ -331,19 +337,21 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 
 			td = append(td, data)
 			if csvPath != "" {
-				repoReport.AddData(data)
+				actionsReport.AddData(data)
 			}
 		}
 	}
 
-	pterm.DefaultTable.WithHasHeader().WithHeaderRowSeparator("-").WithData(td).Render()
+	if !silent {
+		pterm.DefaultTable.WithHasHeader().WithHeaderRowSeparator("-").WithData(td).Render()
+	}
 
 	if csvPath != "" {
-		if err := repoReport.Save(); err != nil {
-			return err
-		}
+		actionsReport.Save()
+	}
 
-		fmt.Fprintf(color.Output, "\n%s %s\n", hiBlack("CSV saved to:"), csvPath)
+	if jsonPath != "" {
+		utils.SaveJsonReport(jsonPath, res)
 	}
 
 	return err
