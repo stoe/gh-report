@@ -76,7 +76,7 @@ func (r *Report) AddData(d []string) {
 func (r *Report) Save() error {
 	r.file.Close()
 
-	fmt.Fprintf(color.Output, "\n%s %s\n", hiBlack("CSV saved to:"), r.path)
+	fmt.Fprintf(color.Output, "%s %s\n", hiBlack("CSV saved to:"), r.path)
 
 	return nil
 }
