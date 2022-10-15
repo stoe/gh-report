@@ -216,61 +216,52 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 					continue
 				}
 
-				text := []byte(e.Object.Blob.Text)
+				text := e.Object.Blob.Text
 
-				var wu WorkflowUses
-				if err := yaml.Unmarshal(text, &wu); err != nil {
-					fmt.Println(
-						"WorkflowUses",
-						r.NameWithOwner,
-						e.Path,
-					)
-
-					return err
-				}
-
-				var wp ActionPermissions
-				if err := yaml.Unmarshal(text, &wp); err != nil {
-					fmt.Println(
-						"ActionPermissions",
-						r.NameWithOwner,
-						e.Path,
-					)
-
-					return err
-				}
-
-				var uses []ActionUses
-
+				// uses
+				var u []ActionUses
 				rx := regexp.MustCompile(`([^\s+]|[^\t+])uses: (?P<uses>.*)`)
-				matches := rx.FindStringSubmatch(e.Object.Blob.Text)[2:]
+				matches := rx.FindStringSubmatch(text)
+				if len(matches) >= 1 {
+					for _, m := range matches[2:] {
+						a := strings.Split(m, "@")
 
-				for _, m := range matches {
-					a := strings.Split(m, "@")
+						var an string
+						av := "HEAD"
 
-					var an string
-					av := "HEAD"
+						an = a[0]
+						if len(a) == 2 {
+							av = a[1]
+						}
 
-					an = a[0]
-					if len(a) == 2 {
-						av = a[1]
+						u = append(u, ActionUses{
+							Action:  an,
+							Version: av,
+							URL:     fmt.Sprintf("https://github.com/%s/tree/%s", an, av),
+						})
 					}
-
-					uses = append(uses, ActionUses{
-						Action:  an,
-						Version: av,
-						URL:     fmt.Sprintf("https://github.com/%s/tree/%s", an, av),
-					})
 				}
 
-				var t []string
+				// permissions
+				var wp ActionPermissions
+				if err := yaml.Unmarshal([]byte(text), &wp); err != nil && !silent {
+					fmt.Println(
+						red(
+							fmt.Sprintf(
+								"\nerror: parsing https://github.com/%s/blob/HEAD/%s",
+								r.NameWithOwner, e.Path),
+						),
+					)
+				}
+
+				var p []string
 				if wp.Permissions != nil {
 					switch wp.Permissions.(type) {
 					case string:
-						t = []string{wp.Permissions.(string)}
+						p = []string{wp.Permissions.(string)}
 					case map[interface{}]interface{}:
 						for g, h := range wp.Permissions.(map[interface{}]interface{}) {
-							t = append(t, fmt.Sprintf("%v: %v", g, h))
+							p = append(p, fmt.Sprintf("%v: %v", g, h))
 						}
 					}
 				}
@@ -278,10 +269,10 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 				for _, job := range wp.Jobs {
 					switch job.Permissions.(type) {
 					case string:
-						t = append(t, job.Permissions.(string))
+						p = append(p, job.Permissions.(string))
 					case map[interface{}]interface{}:
 						for k, v := range job.Permissions.(map[interface{}]interface{}) {
-							t = append(t, fmt.Sprintf("%v: %v", k, v))
+							p = append(p, fmt.Sprintf("%v: %v", k, v))
 						}
 					}
 				}
@@ -292,8 +283,8 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 						"https://github.com/%s/blob/HEAD/%s",
 						r.NameWithOwner, e.Path,
 					),
-					Uses:        uses,
-					Permissions: t,
+					Uses:        u,
+					Permissions: p,
 				})
 			}
 
