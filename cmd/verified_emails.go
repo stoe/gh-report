@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 Stefan Stölzle <stefan@stoelzle.me>
+Copyright © 2022 Stefan Stölzle <stefan@stoelzle.me>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/pterm/pterm"
 	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
@@ -56,17 +55,26 @@ var (
 
 	members []memberDetails
 
-	// emailReport utils.CSVReport
+	emailReport utils.CSVReport
 )
 
-type memberDetails struct {
-	Login                            string
-	Name                             string
-	Email                            string
-	CreatedAt                        time.Time
-	UpdatedAt                        time.Time
-	OrganizationVerifiedDomainEmails []string `graphql:"organizationVerifiedDomainEmails(login: $org)"`
-}
+type (
+	memberDetails struct {
+		Login                            string
+		Name                             string
+		Email                            string
+		CreatedAt                        time.Time
+		UpdatedAt                        time.Time
+		OrganizationVerifiedDomainEmails []string `graphql:"organizationVerifiedDomainEmails(login: $org)"`
+	}
+
+	VerifiedEmailsJSON struct {
+		Login                string   `json:"login"`
+		Name                 string   `json:"name"`
+		Email                string   `json:"email"`
+		VerifiedDomainEmails []string `json:"verified_emails"`
+	}
+)
 
 func init() {
 	rootCmd.AddCommand(verifiedEmailsCmd)
@@ -74,7 +82,15 @@ func init() {
 
 func GetUserEmails(cmd *cobra.Command, args []string) (err error) {
 	if hostname != "" {
-		ExitOnError(fmt.Errorf("GitHub Enterprise Server not supported for this report"))
+		return fmt.Errorf("GitHub Enterprise Server not (yet) supported for this report")
+	}
+
+	if repo != "" {
+		return fmt.Errorf("Repository not supported for this report")
+	}
+
+	if user.Type == "User" {
+		return fmt.Errorf("%s not supported for this report", user.Type)
 	}
 
 	sp.Start()
@@ -100,16 +116,6 @@ func GetUserEmails(cmd *cobra.Command, args []string) (err error) {
 	if owner != "" {
 		organizations = append(organizations, Organization{Login: owner})
 	}
-
-	if repo != "" {
-		sp.Stop()
-		return fmt.Errorf("Repository not implemented")
-	}
-
-	if user.Type == "User" {
-		sp.Stop()
-		return fmt.Errorf("%s not implemented", user.Type)
-	}
 	for _, org := range organizations {
 		variables := map[string]interface{}{
 			"org":  graphql.String(org.Login),
@@ -119,8 +125,8 @@ func GetUserEmails(cmd *cobra.Command, args []string) (err error) {
 		var i = 1
 		for {
 			sp.Suffix = fmt.Sprintf(
-				" fetching user emails %s %s",
-				org.Login,
+				" fetching verified emails report %s %s",
+				cyan(org.Login),
 				hiBlack(fmt.Sprintf("(page %d)", i)),
 			)
 
@@ -148,16 +154,17 @@ func GetUserEmails(cmd *cobra.Command, args []string) (err error) {
 
 	// start CSV file
 	if csvPath != "" {
-		repoReport, err = utils.NewCSVReport(csvPath)
+		emailReport, err = utils.NewCSVReport(csvPath)
 
 		if err != nil {
 			return err
 		}
 
-		repoReport.SetHeader([]string{"login", "full_name", "email", "verified_emails"})
+		emailReport.SetHeader([]string{"login", "full_name", "email", "verified_emails"})
 	}
 
 	var verifiedEmails = make(map[string][]string)
+	var res []VerifiedEmailsJSON
 
 	for _, member := range members {
 		var data = []string{
@@ -173,19 +180,28 @@ func GetUserEmails(cmd *cobra.Command, args []string) (err error) {
 			td = append(td, data)
 
 			if csvPath != "" {
-				repoReport.AddData(data)
+				emailReport.AddData(data)
 			}
+
+			res = append(res, VerifiedEmailsJSON{
+				Login:                member.Login,
+				Name:                 member.Name,
+				Email:                member.Email,
+				VerifiedDomainEmails: member.OrganizationVerifiedDomainEmails,
+			})
 		}
 	}
 
-	pterm.DefaultTable.WithHasHeader().WithHeaderRowSeparator("-").WithData(td).Render()
+	if !silent {
+		pterm.DefaultTable.WithHasHeader().WithHeaderRowSeparator("-").WithData(td).Render()
+	}
 
 	if csvPath != "" {
-		if err := repoReport.Save(); err != nil {
-			return err
-		}
+		emailReport.Save()
+	}
 
-		fmt.Fprintf(color.Output, "\n%s %s\n", hiBlack("CSV saved to:"), csvPath)
+	if jsonPath != "" {
+		utils.SaveJsonReport(jsonPath, res)
 	}
 
 	return err

@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 Stefan Stölzle <stefan@stoelzle.me>
+Copyright © 2022 Stefan Stölzle <stefan@stoelzle.me>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,7 @@ import (
 
 var (
 	noCache = false
+	silent  = false
 
 	enterprise string
 	owner      string
@@ -46,7 +47,8 @@ var (
 	token    string
 	hostname string
 
-	csvPath string
+	csvPath  string
+	jsonPath string
 
 	user struct {
 		Login string `json:"login"`
@@ -56,54 +58,19 @@ var (
 	restClient    api.RESTClient
 	graphqlClient api.GQLClient
 
+	bold    = color.New(color.Bold).SprintFunc()
 	hiBlack = color.New(color.FgHiBlack).SprintFunc()
 	red     = color.New(color.FgRed).SprintFunc()
-	green   = color.New(color.FgGreen).SprintFunc()
+	cyan    = color.New(color.FgCyan).SprintFunc()
 
 	sp = spinner.New(spinner.CharSets[14], 40*time.Millisecond)
 
 	rootCmd = &cobra.Command{
-		Use:     "gh-report",
-		Short:   "gh cli extension to generate reports",
-		Long:    `gh cli extension to generate enterprise/organization/user/repository reports`,
-		Version: "0.0.0-development",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) (err error) {
-			if enterprise != "" && owner != "" {
-				return fmt.Errorf("cannot use --enterprise and --owner together")
-			}
-
-			if enterprise != "" && repo != "" {
-				return fmt.Errorf("cannot use --enterprise and --repo together")
-			}
-
-			if owner != "" && repo != "" {
-				return fmt.Errorf("cannot use --owner and --repo together")
-			}
-
-			if enterprise == "" && owner == "" && repo == "" {
-				var r repository.Repository
-
-				r, err = gh.CurrentRepository()
-
-				if err != nil {
-					return err
-				}
-
-				owner = r.Owner()
-				repo = r.Name()
-			} else if strings.Contains(repo, "/") && owner == "" {
-				r := strings.Split(repo, "/")
-
-				owner = r[0]
-				repo = r[1]
-			}
-
-			if owner != "" || repo != "" {
-				err = restClient.Get(fmt.Sprintf("users/%s", owner), &user)
-			}
-
-			return err
-		},
+		Use:               "gh-report",
+		Short:             "gh cli extension to generate reports",
+		Long:              `gh cli extension to generate enterprise/organization/user/repository reports`,
+		Version:           "0.0.0-development",
+		PersistentPreRunE: run,
 	}
 
 	enterpriseQuery struct {
@@ -121,9 +88,11 @@ var (
 	organizations []Organization
 )
 
-type Organization struct {
-	Login string
-}
+type (
+	Organization struct {
+		Login string
+	}
+)
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
@@ -137,6 +106,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().BoolVar(&noCache, "no-cache", false, "do not cache results for one hour (default: false)")
+	rootCmd.PersistentFlags().BoolVar(&silent, "silent", false, "do not print any output (default: false)")
 
 	rootCmd.PersistentFlags().StringVarP(&enterprise, "enterprise", "e", "", "GitHub Enterprise Cloud account")
 	rootCmd.PersistentFlags().StringVarP(&owner, "owner", "o", "", "GitHub account (organization or user account)")
@@ -146,6 +116,13 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&hostname, "hostname", "", "GitHub Enterprise Server hostname")
 
 	rootCmd.PersistentFlags().StringVar(&csvPath, "csv", "", "Path to CSV file")
+	rootCmd.PersistentFlags().StringVar(&jsonPath, "json", "", "Path to JSON file")
+
+	rootCmd.MarkFlagsMutuallyExclusive("enterprise", "owner")
+	rootCmd.MarkFlagsMutuallyExclusive("enterprise", "repo")
+	rootCmd.MarkFlagsMutuallyExclusive("owner", "repo")
+
+	rootCmd.MarkFlagRequired("token")
 }
 
 func initConfig() {
@@ -165,6 +142,32 @@ func initConfig() {
 
 	restClient, _ = gh.RESTClient(&opts)
 	graphqlClient, _ = gh.GQLClient(&opts)
+}
+
+func run(cmd *cobra.Command, args []string) (err error) {
+	if enterprise == "" && owner == "" && repo == "" {
+		var r repository.Repository
+
+		r, err = gh.CurrentRepository()
+
+		if err != nil {
+			return err
+		}
+
+		owner = r.Owner()
+		repo = r.Name()
+	} else if strings.Contains(repo, "/") && owner == "" {
+		r := strings.Split(repo, "/")
+
+		owner = r[0]
+		repo = r[1]
+	}
+
+	if owner != "" || repo != "" {
+		err = restClient.Get(fmt.Sprintf("users/%s", owner), &user)
+	}
+
+	return err
 }
 
 func ExitOnError(err error) {

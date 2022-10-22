@@ -19,12 +19,33 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-package main
+package utils
 
 import (
-	"github.com/stoe/gh-report/cmd"
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/fatih/color"
 )
 
-func main() {
-	cmd.Execute()
+func SaveJsonReport(p string, data interface{}) error {
+	if _, err := os.Stat(filepath.Dir(p)); err != nil {
+		return fmt.Errorf("failed to open directory, error: %w", err)
+	}
+
+	file, err := os.Create(p)
+	if err != nil {
+		return fmt.Errorf("failed to create file, error: %w", err)
+	}
+
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.Encode(data)
+
+	fmt.Fprintf(color.Output, "%s %s\n", hiBlack("JSON saved to:"), p)
+
+	return nil
 }

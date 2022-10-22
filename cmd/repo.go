@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 Stefan Stölzle <stefan@stoelzle.me>
+Copyright © 2022 Stefan Stölzle <stefan@stoelzle.me>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/pterm/pterm"
 	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
@@ -62,36 +61,50 @@ var (
 	repoReport utils.CSVReport
 )
 
-type Repos struct {
-	PageInfo struct {
-		HasNextPage bool
-		EndCursor   graphql.String
+type (
+	Repos struct {
+		PageInfo struct {
+			HasNextPage bool
+			EndCursor   graphql.String
+		}
+		Nodes []Repository
 	}
-	Nodes []Repository
-}
 
-type Repository struct {
-	Name             string
-	NameWithOwner    string
-	Owner            Organization
-	Description      string
-	URL              string
-	Visibility       string
-	IsArchived       bool
-	IsTemplate       bool
-	DefaultBranchRef struct {
-		Name string
+	Repository struct {
+		Name             string
+		NameWithOwner    string
+		Owner            Organization
+		Description      string
+		URL              string
+		Visibility       string
+		IsArchived       bool
+		IsTemplate       bool
+		DefaultBranchRef struct {
+			Name string
+		}
+		HasIssuesEnabled   bool
+		HasProjectsEnabled bool
+		HasWikiEnabled     bool
+		IsFork             bool
+		ForkCount          int
+		ForkingAllowed     bool
+		DiskUsage          int
+		CreatedAt          time.Time
+		UpdatedAt          time.Time
 	}
-	HasIssuesEnabled   bool
-	HasProjectsEnabled bool
-	HasWikiEnabled     bool
-	IsFork             bool
-	ForkCount          int
-	ForkingAllowed     bool
-	DiskUsage          int
-	CreatedAt          time.Time
-	UpdatedAt          time.Time
-}
+
+	RepoReportJSON struct {
+		Owner         string    `json:"owner"`
+		Repo          string    `json:"repo"`
+		Visibility    string    `json:"visibility"`
+		Archived      bool      `json:"is_archived"`
+		Fork          bool      `json:"is_fork"`
+		DefaultBranch string    `json:"default_branch"`
+		Disk          int       `json:"disk_usage"`
+		CreatedAt     time.Time `json:"created_at"`
+		UpdatedAt     time.Time `json:"updated_at"`
+	}
+)
 
 func init() {
 	rootCmd.AddCommand(repoCmd)
@@ -104,7 +117,11 @@ func init() {
 // GetUses returns GitHub Actions used in workflows
 func GetRepos(cmd *cobra.Command, args []string) (err error) {
 	if hostname != "" {
-		ExitOnError(fmt.Errorf("GitHub Enterprise Server not supported for this report"))
+		return fmt.Errorf("GitHub Enterprise Server not (yet) supported for this report")
+	}
+
+	if repo != "" {
+		return fmt.Errorf("Repository not (yet) supported for this report")
 	}
 
 	sp.Start()
@@ -131,11 +148,6 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 		organizations = append(organizations, Organization{Login: owner})
 	}
 
-	if repo != "" {
-		sp.Stop()
-		return fmt.Errorf("Repository not implemented")
-	}
-
 	var i = 1
 	if user.Type == "User" {
 		variables := map[string]interface{}{
@@ -145,8 +157,8 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 
 		for {
 			sp.Suffix = fmt.Sprintf(
-				" fetching user repositories %s %s",
-				user.Login,
+				" fetching repositories report %s %s",
+				cyan(user.Login),
 				hiBlack(fmt.Sprintf("(page %d)", i)),
 			)
 
@@ -173,8 +185,8 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 
 			for {
 				sp.Suffix = fmt.Sprintf(
-					" fetching organization repositories %s %s",
-					org.Login,
+					" fetching repositories report %s %s",
+					cyan(org.Login),
 					hiBlack(fmt.Sprintf("(page %d)", i)),
 				)
 
@@ -212,6 +224,8 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 		repoReport.SetHeader([]string{"owner", "repo", "visibility", "archived?", "fork?", "default_branch", "disk", "created_at", "updated_at"})
 	}
 
+	var res []RepoReportJSON
+
 	for _, repo := range repositories {
 		if internal && repo.Visibility != "INTERNAL" {
 			continue
@@ -235,6 +249,18 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 			repo.UpdatedAt.Format("2006-01-02"),
 		}
 
+		res = append(res, RepoReportJSON{
+			Owner:         repo.Owner.Login,
+			Repo:          repo.Name,
+			Visibility:    strings.ToLower(repo.Visibility),
+			Archived:      repo.IsArchived,
+			Fork:          repo.IsFork,
+			DefaultBranch: repo.DefaultBranchRef.Name,
+			Disk:          repo.DiskUsage,
+			CreatedAt:     repo.CreatedAt,
+			UpdatedAt:     repo.UpdatedAt,
+		})
+
 		td = append(td, data)
 
 		if csvPath != "" {
@@ -242,14 +268,16 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 		}
 	}
 
-	pterm.DefaultTable.WithHasHeader().WithHeaderRowSeparator("-").WithData(td).Render()
+	if !silent {
+		pterm.DefaultTable.WithHasHeader().WithHeaderRowSeparator("-").WithData(td).Render()
+	}
 
 	if csvPath != "" {
-		if err := repoReport.Save(); err != nil {
-			return err
-		}
+		repoReport.Save()
+	}
 
-		fmt.Fprintf(color.Output, "\n%s %s\n", hiBlack("CSV saved to:"), csvPath)
+	if jsonPath != "" {
+		utils.SaveJsonReport(jsonPath, res)
 	}
 
 	return err

@@ -23,7 +23,7 @@ Usage:
   gh report [command]
 
 Available Commands:
-  actions         Report on GitHub Actions [permissions|uses]
+  actions         Report on GitHub Actions
   completion      Generate the autocompletion script for the specified shell
   help            Help about any command
   repo            Report on GitHub repositories
