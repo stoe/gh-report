@@ -23,7 +23,6 @@ package cmd
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
 
@@ -53,7 +52,7 @@ var (
 					EndCursor   graphql.String
 				}
 				Nodes []ActionUsesRepository
-			} `graphql:"repositories(first: 100, after: $page, orderBy: { field: NAME, direction: DESC })"`
+			} `graphql:"repositories(first: 10, after: $page, affiliations: OWNER, orderBy: { field: NAME, direction: DESC })"`
 		} `graphql:"repositoryOwner(login: $owner)"`
 	}
 
@@ -109,7 +108,7 @@ type (
 
 	ActionWorkflow struct {
 		Path        string       `json:"path"`
-		File        string       `json:"file"`
+		URL         string       `json:"url"`
 		Uses        []ActionUses `json:"uses"`
 		Permissions []string     `json:"permissions"`
 	}
@@ -222,74 +221,97 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 
 				text := e.Object.Blob.Text
 
-				// uses
-				var u []ActionUses
-				rx := regexp.MustCompile(`([^\s+]|[^\t+])uses: (?P<uses>.*)`)
-				matches := rx.FindStringSubmatch(text)
-				if len(matches) >= 1 {
-					for _, m := range matches[2:] {
-						a := strings.Split(m, "@")
+				// get Action uses
+				var wu WorkflowUses
+				if err := yaml.Unmarshal([]byte(text), &wu); err != nil && !silent {
+					fmt.Println(
+						red(
+							fmt.Sprintf(
+								"\nerror: parsing https://github.com/%s/blob/HEAD/%s",
+								r.NameWithOwner, e.Path,
+							),
+						),
+					)
+				}
 
-						var an string
-						av := "HEAD"
+				var uses []ActionUses
+				for _, job := range wu.Jobs {
+					for _, step := range job.Steps {
+						if step.Uses != "" && excludeGitHubAuthored(step.Uses) {
+							a := strings.Split(step.Uses, "@")
 
-						an = a[0]
-						if len(a) == 2 {
-							av = a[1]
+							var an string
+							var av string
+							var url string
+
+							an = a[0]
+							if len(a) == 2 {
+								av = a[1]
+								url = fmt.Sprintf(
+									"https://github.com/%s/tree/%s",
+									an,
+									av,
+								)
+							} else {
+								url = fmt.Sprintf(
+									"https://github.com/%s/tree/HEAD",
+									an,
+								)
+							}
+
+							if strings.Contains(url, "./") {
+								url = fmt.Sprintf(
+									"https://github.com/%s/%s/tree/HEAD/%s",
+									r.Owner.Login,
+									r.Name,
+									strings.ReplaceAll(an, "./", ""),
+								)
+							}
+
+							uses = append(uses, ActionUses{
+								Action:  an,
+								Version: av,
+								URL:     url,
+							})
 						}
-
-						u = append(u, ActionUses{
-							Action:  an,
-							Version: av,
-							URL:     fmt.Sprintf("https://github.com/%s/tree/%s", an, av),
-						})
 					}
 				}
 
-				// permissions
+				// get Action permissions
 				var wp ActionPermissions
 				if err := yaml.Unmarshal([]byte(text), &wp); err != nil && !silent {
 					fmt.Println(
 						red(
 							fmt.Sprintf(
 								"\nerror: parsing https://github.com/%s/blob/HEAD/%s",
-								r.NameWithOwner, e.Path),
+								r.NameWithOwner, e.Path,
+							),
 						),
 					)
 				}
 
-				var p []string
+				var permissions []string
+				// if permissions are defined at the workflow level
 				if wp.Permissions != nil {
-					switch wp.Permissions.(type) {
-					case string:
-						p = []string{wp.Permissions.(string)}
-					case map[interface{}]interface{}:
-						for g, h := range wp.Permissions.(map[interface{}]interface{}) {
-							p = append(p, fmt.Sprintf("%v: %v", g, h))
-						}
-					}
+					permissions = append(permissions, getPermissions(wp.Permissions)...)
 				}
 
 				// if permissions are defined at the job level
 				for _, job := range wp.Jobs {
-					switch job.Permissions.(type) {
-					case string:
-						p = append(p, job.Permissions.(string))
-					case map[interface{}]interface{}:
-						for k, v := range job.Permissions.(map[interface{}]interface{}) {
-							p = append(p, fmt.Sprintf("%v: %v", k, v))
-						}
-					}
+					permissions = append(permissions, getPermissions(job.Permissions)...)
 				}
 
+				// put it all together
 				wfs = append(wfs, ActionWorkflow{
 					Path: e.Path,
-					File: fmt.Sprintf(
-						"https://github.com/%s/blob/HEAD/%s",
-						r.NameWithOwner, e.Path,
+					URL: fmt.Sprintf(
+						"https://github.com/%s/%s/blob/HEAD/%s",
+						r.Owner.Login,
+						r.Name,
+						e.Path,
 					),
-					Uses:        u,
-					Permissions: p,
+					Uses:        uniqueUses(uses),
+					Permissions: uniquePermissions(permissions),
 				})
 			}
 
@@ -353,7 +375,7 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 	return err
 }
 
-func ExcludeGitHubAuthored(s string) bool {
+func excludeGitHubAuthored(s string) bool {
 	if exclude {
 		return !strings.HasPrefix(s, "actions/") && !strings.HasPrefix(s, "github/")
 	}
@@ -373,4 +395,59 @@ func usesToString(u []ActionUses) []string {
 	}
 
 	return s
+}
+
+func getPermissions(p interface{}) []string {
+	var permissions []string
+
+	switch p := p.(type) {
+	case string:
+		permissions = append(permissions, p)
+	case map[interface{}]interface{}:
+		for k, v := range p {
+			permissions = append(permissions, fmt.Sprintf("%v: %v", k, v))
+		}
+	}
+
+	return permissions
+}
+
+func uniquePermissions(e []string) []string {
+	r := []string{}
+
+	for _, s := range e {
+		if !containsPermissions(r[:], s) {
+			r = append(r, s)
+		}
+	}
+	return r
+}
+
+func containsPermissions(e []string, c string) bool {
+	for _, s := range e {
+		if s == c {
+			return true
+		}
+	}
+	return false
+}
+
+func uniqueUses(e []ActionUses) []ActionUses {
+	r := []ActionUses{}
+
+	for _, s := range e {
+		if !containsUses(r[:], s) {
+			r = append(r, s)
+		}
+	}
+	return r
+}
+
+func containsUses(s []ActionUses, e ActionUses) bool {
+	for _, a := range s {
+		if a.Action == e.Action && a.Version == e.Version {
+			return true
+		}
+	}
+	return false
 }
