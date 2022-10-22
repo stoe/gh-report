@@ -94,7 +94,11 @@ type (
 	}
 
 	WorkflowUses struct {
-		Jobs map[string]interface{} `yaml:"jobs,omitempty"`
+		Jobs map[string]struct {
+			Steps []struct {
+				Uses string
+			} `yaml:"steps"`
+		} `yaml:"jobs,omitempty"`
 	}
 
 	ActionUsesReport struct {
@@ -266,6 +270,7 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 					}
 				}
 
+				// if permissions are defined at the job level
 				for _, job := range wp.Jobs {
 					switch job.Permissions.(type) {
 					case string:
@@ -322,7 +327,7 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 				r.Owner,
 				r.Repo,
 				w.Path,
-				strings.Join(UsesToString(w.Uses), ", "),
+				strings.Join(usesToString(w.Uses), ", "),
 				strings.Join(w.Permissions, ", "),
 			}
 
@@ -356,7 +361,7 @@ func ExcludeGitHubAuthored(s string) bool {
 	return true
 }
 
-func UsesToString(u []ActionUses) []string {
+func usesToString(u []ActionUses) []string {
 	var s = []string{}
 
 	for _, v := range u {
