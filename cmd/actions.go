@@ -93,7 +93,11 @@ type (
 	}
 
 	WorkflowUses struct {
-		Jobs map[string]interface{} `yaml:"jobs,omitempty"`
+		Jobs map[string]struct {
+			Steps []struct {
+				Uses string
+			} `yaml:"steps"`
+		} `yaml:"jobs,omitempty"`
 	}
 
 	ActionUsesReport struct {
@@ -104,6 +108,7 @@ type (
 
 	ActionWorkflow struct {
 		Path        string       `json:"path"`
+		URL         string       `json:"url"`
 		Uses        []ActionUses `json:"uses"`
 		Permissions []string     `json:"permissions"`
 	}
@@ -111,6 +116,7 @@ type (
 	ActionUses struct {
 		Action  string `json:"action"`
 		Version string `json:"version"`
+		URL     string `json:"url"`
 	}
 
 	ActionPermissions struct {
@@ -237,82 +243,72 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 					return err
 				}
 
+				// get Action uses
 				var uses []ActionUses
 				for _, job := range wu.Jobs {
-					u := job.(map[interface{}]interface{})["uses"]
-					s := job.(map[interface{}]interface{})["steps"]
-
-					switch {
-					case u == nil && s != nil:
-						for _, s := range s.([]interface{}) {
-							step := s.(map[interface{}]interface{})
-
-							if step["uses"] != nil {
-								if ExcludeGitHubAuthored(step["uses"].(string)) {
-									a := strings.Split(step["uses"].(string), "@")
-
-									var an string
-									var av string
-
-									an = a[0]
-									if len(a) == 2 {
-										av = a[1]
-									}
-
-									uses = append(uses, ActionUses{
-										Action:  an,
-										Version: av,
-									})
-								}
-							}
-						}
-					case u != nil && s == nil:
-						if ExcludeGitHubAuthored(u.(string)) {
-							a := strings.Split(u.(string), "@")
+					for _, step := range job.Steps {
+						if step.Uses != "" && excludeGitHubAuthored(step.Uses) {
+							a := strings.Split(step.Uses, "@")
 
 							var an string
 							var av string
+							var url string
 
 							an = a[0]
 							if len(a) == 2 {
 								av = a[1]
+								url = fmt.Sprintf(
+									"https://github.com/%s/tree/%s",
+									an,
+									av,
+								)
+							} else {
+								url = fmt.Sprintf(
+									"https://github.com/%s/tree/HEAD",
+									an,
+								)
+							}
+
+							if strings.Contains(url, "./") {
+								url = fmt.Sprintf(
+									"https://github.com/%s/%s/tree/HEAD/%s",
+									r.Owner.Login,
+									r.Name,
+									strings.ReplaceAll(an, "./", ""),
+								)
 							}
 
 							uses = append(uses, ActionUses{
 								Action:  an,
 								Version: av,
+								URL:     url,
 							})
 						}
 					}
 				}
 
-				var t []string
+				// get Action permissions
+				var permissions []string
+				// if permissions are defined at the workflow level
 				if wp.Permissions != nil {
-					switch wp.Permissions.(type) {
-					case string:
-						t = []string{wp.Permissions.(string)}
-					case map[interface{}]interface{}:
-						for g, h := range wp.Permissions.(map[interface{}]interface{}) {
-							t = append(t, fmt.Sprintf("%v: %v", g, h))
-						}
-					}
+					permissions = append(permissions, getPermissions(wp.Permissions)...)
 				}
 
+				// if permissions are defined at the job level
 				for _, job := range wp.Jobs {
-					switch job.Permissions.(type) {
-					case string:
-						t = append(t, job.Permissions.(string))
-					case map[interface{}]interface{}:
-						for k, v := range job.Permissions.(map[interface{}]interface{}) {
-							t = append(t, fmt.Sprintf("%v: %v", k, v))
-						}
-					}
+					permissions = append(permissions, getPermissions(job.Permissions)...)
 				}
 
 				wfs = append(wfs, ActionWorkflow{
-					Path:        e.Path,
-					Uses:        uses,
-					Permissions: t,
+					Path: e.Path,
+					URL: fmt.Sprintf(
+						"https://github.com/%s/%s/blob/HEAD/%s",
+						r.Owner.Login,
+						r.Name,
+						e.Path,
+					),
+					Uses:        uniqueUses(uses),
+					Permissions: unique(permissions),
 				})
 			}
 
@@ -350,7 +346,7 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 				r.Owner,
 				r.Repo,
 				w.Path,
-				strings.Join(UsesToString(w.Uses), ", "),
+				strings.Join(usesToString(w.Uses), ", "),
 				strings.Join(w.Permissions, ", "),
 			}
 
@@ -376,7 +372,7 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 	return err
 }
 
-func ExcludeGitHubAuthored(s string) bool {
+func excludeGitHubAuthored(s string) bool {
 	if exclude {
 		return !strings.HasPrefix(s, "actions/") && !strings.HasPrefix(s, "github/")
 	}
@@ -384,7 +380,7 @@ func ExcludeGitHubAuthored(s string) bool {
 	return true
 }
 
-func UsesToString(u []ActionUses) []string {
+func usesToString(u []ActionUses) []string {
 	var s = []string{}
 
 	for _, v := range u {
@@ -396,4 +392,59 @@ func UsesToString(u []ActionUses) []string {
 	}
 
 	return s
+}
+
+func getPermissions(p interface{}) []string {
+	var permissions []string
+
+	switch p := p.(type) {
+	case string:
+		permissions = append(permissions, p)
+	case map[interface{}]interface{}:
+		for k, v := range p {
+			permissions = append(permissions, fmt.Sprintf("%v: %v", k, v))
+		}
+	}
+
+	return permissions
+}
+
+func unique(e []string) []string {
+	r := []string{}
+
+	for _, s := range e {
+		if !contains(r[:], s) {
+			r = append(r, s)
+		}
+	}
+	return r
+}
+
+func uniqueUses(e []ActionUses) []ActionUses {
+	r := []ActionUses{}
+
+	for _, s := range e {
+		if !containsUses(r[:], s) {
+			r = append(r, s)
+		}
+	}
+	return r
+}
+
+func containsUses(s []ActionUses, e ActionUses) bool {
+	for _, a := range s {
+		if a.Action == e.Action && a.Version == e.Version {
+			return true
+		}
+	}
+	return false
+}
+
+func contains(e []string, c string) bool {
+	for _, s := range e {
+		if s == c {
+			return true
+		}
+	}
+	return false
 }
