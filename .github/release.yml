@@ -1,0 +1,11 @@
+changelog:
+  exclude: {}
+  categories:
+    - title: 'Changes 📦'
+      labels: []
+    - title: 'Dependency Updates 🆙'
+      labels:
+        - 'dependency :robot:'
+        - 'dependency 🤖'
+        - 'github-action :robot:'
+        - 'github-action 🤖'
