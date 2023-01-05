@@ -8,7 +8,7 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/pterm/pterm v0.12.49
 	github.com/shurcooL/graphql v0.0.0-20220606043923-3cf50f8a0a29
-	github.com/spf13/cobra v1.5.0
+	github.com/spf13/cobra v1.6.1
 	gopkg.in/yaml.v2 v2.4.0
 )
 
