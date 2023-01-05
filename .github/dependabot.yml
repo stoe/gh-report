@@ -5,19 +5,20 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'saturday'
-      time: '09:00'
       timezone: 'Europe/Berlin'
     commit-message:
-      prefix: 'action'
+      prefix: '🆙 action'
     labels:
       - 'github-action :robot:'
 
   - package-ecosystem: 'gomod'
     directory: '/'
     schedule:
-      interval: 'monthly'
+      interval: 'weekly'
+      day: 'saturday'
+      timezone: 'Europe/Berlin'
     commit-message:
-      prefix: 'go'
+      prefix: '🆙 go'
       include: 'scope'
     labels:
       - 'dependency :robot:'
