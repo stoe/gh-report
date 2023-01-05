@@ -8,7 +8,7 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/pterm/pterm v0.12.51
 	github.com/shurcooL/graphql v0.0.0-20220606043923-3cf50f8a0a29
-	github.com/spf13/cobra v1.5.0
+	github.com/spf13/cobra v1.6.1
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -20,7 +20,7 @@ require (
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/gookit/color v1.5.2 // indirect
 	github.com/henvic/httpretty v0.0.6 // indirect
-	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/lithammer/fuzzysearch v1.1.5 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
