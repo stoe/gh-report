@@ -6,7 +6,7 @@ require (
 	github.com/briandowns/spinner v1.20.0
 	github.com/cli/go-gh v1.0.0
 	github.com/fatih/color v1.13.0
-	github.com/pterm/pterm v0.12.51
+	github.com/pterm/pterm v0.12.53
 	github.com/shurcooL/graphql v0.0.0-20220606043923-3cf50f8a0a29
 	github.com/spf13/cobra v1.6.1
 	gopkg.in/yaml.v2 v2.4.0
@@ -34,6 +34,6 @@ require (
 	golang.org/x/net v0.0.0-20220923203811-8be639271d50 // indirect
 	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect
 	golang.org/x/term v0.1.0 // indirect
-	golang.org/x/text v0.4.0 // indirect
+	golang.org/x/text v0.6.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
