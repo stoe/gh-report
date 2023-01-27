@@ -126,9 +126,15 @@ func init() {
 }
 
 func initConfig() {
+	cache := time.Hour
+
+	if noCache {
+		cache = 0
+	}
+
 	opts := api.ClientOptions{
 		EnableCache: !noCache,
-		CacheTTL:    time.Hour,
+		CacheTTL:    cache,
 	}
 
 	if token != "" {
