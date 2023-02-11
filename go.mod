@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/briandowns/spinner v1.20.0
-	github.com/cli/go-gh v1.0.0
+	github.com/cli/go-gh v1.1.0
 	github.com/fatih/color v1.14.1
 	github.com/pterm/pterm v0.12.54
 	github.com/shurcooL/graphql v0.0.0-20220606043923-3cf50f8a0a29
