@@ -13,8 +13,8 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c
 
-      - uses: cli/gh-extension-precompile@v1
+      - uses: cli/gh-extension-precompile@640911b0a0f2adb89a07a8ba547053cbd4001e1e
         with:
           go_version: 1.19.x

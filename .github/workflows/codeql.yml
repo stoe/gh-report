@@ -24,12 +24,12 @@ jobs:
       LGTM_INDEX_FILTERS: "exclude:dist/*"
 
     steps:
-      - uses: actions/checkout@v2.4.0
+      - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c
 
-      - uses: github/codeql-action/init@v2
+      - uses: github/codeql-action/init@81644f35ff20aa6b0e7b936f0e8716419ba7d295
         with:
           languages: go
 
-      - uses: github/codeql-action/autobuild@v2
+      - uses: github/codeql-action/autobuild@81644f35ff20aa6b0e7b936f0e8716419ba7d295
 
-      - uses: github/codeql-action/analyze@v2
+      - uses: github/codeql-action/analyze@81644f35ff20aa6b0e7b936f0e8716419ba7d295
