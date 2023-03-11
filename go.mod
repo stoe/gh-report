@@ -3,7 +3,7 @@ module github.com/stoe/gh-report
 go 1.19
 
 require (
-	github.com/briandowns/spinner v1.22.0
+	github.com/briandowns/spinner v1.23.0
 	github.com/cli/go-gh v1.2.1
 	github.com/fatih/color v1.14.1
 	github.com/pterm/pterm v0.12.54
