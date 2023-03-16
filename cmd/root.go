@@ -30,6 +30,7 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/cli/go-gh"
 	"github.com/cli/go-gh/pkg/api"
+	"github.com/cli/go-gh/pkg/auth"
 	"github.com/cli/go-gh/pkg/repository"
 	"github.com/fatih/color"
 	"github.com/shurcooL/graphql"
@@ -45,7 +46,7 @@ var (
 	repo       string
 
 	token    string
-	hostname string
+	hostname = "github.com"
 
 	csvPath  string
 	jsonPath string
@@ -112,7 +113,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&owner, "owner", "o", "", "GitHub account (organization or user account)")
 	rootCmd.PersistentFlags().StringVarP(&repo, "repo", "r", "", "GitHub repository (owner/repo)")
 
-	rootCmd.PersistentFlags().StringVar(&token, "token", "", "GitHub Personal Access Token (default: \"\")")
+	rootCmd.PersistentFlags().StringVar(&token, "token", "", "GitHub Personal Access Token (default: gh auth token)")
 	rootCmd.PersistentFlags().StringVar(&hostname, "hostname", "", "GitHub Enterprise Server hostname")
 
 	rootCmd.PersistentFlags().StringVar(&csvPath, "csv", "", "Path to CSV file")
@@ -121,8 +122,6 @@ func init() {
 	rootCmd.MarkFlagsMutuallyExclusive("enterprise", "owner")
 	rootCmd.MarkFlagsMutuallyExclusive("enterprise", "repo")
 	rootCmd.MarkFlagsMutuallyExclusive("owner", "repo")
-
-	rootCmd.MarkFlagRequired("token")
 }
 
 func initConfig() {
@@ -139,11 +138,13 @@ func initConfig() {
 
 	if token != "" {
 		opts.AuthToken = token
+	} else {
+		t, _ := auth.TokenForHost(hostname)
+		opts.AuthToken = t
 	}
 
 	if hostname != "" {
-		// TODO: check if hostname is valid
-		opts.Host = hostname
+		opts.Host = strings.ToLower(hostname)
 	}
 
 	restClient, _ = gh.RESTClient(&opts)
