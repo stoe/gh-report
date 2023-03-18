@@ -1,14 +1,8 @@
 project_name: gh_report
 
-release:
-  prerelease: auto
-
 before:
   hooks:
-    # You may remove this if you don't use go modules.
     - go mod tidy
-    # you may remove this if you don't need go generate
-    - go generate ./...
 
 builds:
   - env:
@@ -19,19 +13,12 @@ builds:
       - darwin
 
 archives:
-  - rlcp: true
-    name_template: >-
+  - name_template: >-
       {{ .ProjectName }}_{{ .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
-    files:
-      - license
-      - readme.md
-    format_overrides:
-      - goos: windows
-        format: zip
-    wrap_in_directory: 'true'
+    format: binary
 
 checksum:
   name_template: "checksums.txt"
@@ -40,4 +27,7 @@ snapshot:
   name_template: "{{ incpatch .Version }}"
 
 changelog:
-  skip: true
+  use: github-native
+
+release:
+  prerelease: auto
