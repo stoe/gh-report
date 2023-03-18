@@ -12,7 +12,7 @@ $ gh extension install stoe/gh-report
 
 ## Usage
 
-```txt
+```bash
 $ gh report [command] [flags]
 ```
 
@@ -20,12 +20,14 @@ $ gh report [command] [flags]
 gh cli extension to generate enterprise/organization/user/repository reports
 
 Usage:
-  gh report [command]
+  gh-report [command]
 
 Available Commands:
   actions         Report on GitHub Actions
+  billing         Report on GitHub billing
   completion      Generate the autocompletion script for the specified shell
   help            Help about any command
+  license         Report on GitHub Enterprise licensing
   repo            Report on GitHub repositories
   verified-emails List enterprise/organization members' verified emails
 
@@ -34,13 +36,15 @@ Flags:
   -e, --enterprise string   GitHub Enterprise Cloud account
   -h, --help                help for gh-report
       --hostname string     GitHub Enterprise Server hostname
+      --json string         Path to JSON file
       --no-cache            do not cache results for one hour (default: false)
   -o, --owner string        GitHub account (organization or user account)
   -r, --repo string         GitHub repository (owner/repo)
-      --token string        GitHub Personal Access Token (default: "")
-  -v, --version             version for gh report
+      --silent              do not print any output (default: false)
+      --token string        GitHub Personal Access Token (default: gh auth token)
+  -v, --version             version for gh-report
 
-Use "gh report [command] --help" for more information about a command.
+Use "gh-report [command] --help" for more information about a command.
 ```
 
 ## License
