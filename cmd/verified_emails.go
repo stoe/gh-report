@@ -81,10 +81,6 @@ func init() {
 }
 
 func GetUserEmails(cmd *cobra.Command, args []string) (err error) {
-	if hostname != "" {
-		return fmt.Errorf("GitHub Enterprise Server not (yet) supported for this report")
-	}
-
 	if repo != "" {
 		return fmt.Errorf("Repository not supported for this report")
 	}
@@ -109,6 +105,9 @@ func GetUserEmails(cmd *cobra.Command, args []string) (err error) {
 				break
 			}
 
+			// sleep for 1 second to avoid rate limiting
+			time.Sleep(1 * time.Second)
+
 			variables["page"] = &enterpriseQuery.Enterprise.Organizations.PageInfo.EndCursor
 		}
 	}
@@ -116,6 +115,7 @@ func GetUserEmails(cmd *cobra.Command, args []string) (err error) {
 	if owner != "" {
 		organizations = append(organizations, Organization{Login: owner})
 	}
+
 	for _, org := range organizations {
 		variables := map[string]interface{}{
 			"org":  graphql.String(org.Login),
