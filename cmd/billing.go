@@ -392,7 +392,7 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 	td = append(td, sum)
 
 	if !silent {
-		pterm.DefaultTable.WithHasHeader().WithHeaderRowSeparator("-").WithData(td).Render()
+		pterm.DefaultTable.WithHasHeader().WithHeaderRowSeparator("-").WithRightAlignment(true).WithData(td).Render()
 	}
 
 	if csvPath != "" {
