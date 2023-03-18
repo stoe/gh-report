@@ -35,4 +35,6 @@ jobs:
 
       - run: go get -v -t -d ./...
 
+      - run: go test -v ./...
+
       - run: go build -v .

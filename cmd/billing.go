@@ -33,7 +33,7 @@ import (
 )
 
 var (
-	billingCmd = &cobra.Command{
+	BillingCmd = &cobra.Command{
 		Use:   "billing",
 		Short: "Report on GitHub billing",
 		Long:  "Report on GitHub billing",
@@ -50,18 +50,18 @@ var (
 )
 
 func init() {
-	billingCmd.PersistentFlags().BoolVar(&all, "all", true, "Get all billing data")
-	billingCmd.PersistentFlags().BoolVar(&actions, "actions", false, "Get GitHub Actions billing")
-	billingCmd.PersistentFlags().BoolVar(&packages, "packages", false, "Get GitHub Packages billing")
-	billingCmd.PersistentFlags().BoolVar(&security, "security", false, "Get GitHub Advanced Security active committers")
-	billingCmd.PersistentFlags().BoolVar(&storage, "storage", false, "Get shared storage billing")
+	BillingCmd.PersistentFlags().BoolVar(&all, "all", true, "Get all billing data")
+	BillingCmd.PersistentFlags().BoolVar(&actions, "actions", false, "Get GitHub Actions billing")
+	BillingCmd.PersistentFlags().BoolVar(&packages, "packages", false, "Get GitHub Packages billing")
+	BillingCmd.PersistentFlags().BoolVar(&security, "security", false, "Get GitHub Advanced Security active committers")
+	BillingCmd.PersistentFlags().BoolVar(&storage, "storage", false, "Get shared storage billing")
 
-	billingCmd.MarkFlagsMutuallyExclusive("all", "actions")
-	billingCmd.MarkFlagsMutuallyExclusive("all", "packages")
-	billingCmd.MarkFlagsMutuallyExclusive("all", "security")
-	billingCmd.MarkFlagsMutuallyExclusive("all", "storage")
+	BillingCmd.MarkFlagsMutuallyExclusive("all", "actions")
+	BillingCmd.MarkFlagsMutuallyExclusive("all", "packages")
+	BillingCmd.MarkFlagsMutuallyExclusive("all", "security")
+	BillingCmd.MarkFlagsMutuallyExclusive("all", "storage")
 
-	rootCmd.AddCommand(billingCmd)
+	RootCmd.AddCommand(BillingCmd)
 }
 
 type (

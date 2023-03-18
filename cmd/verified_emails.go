@@ -33,7 +33,7 @@ import (
 )
 
 var (
-	verifiedEmailsCmd = &cobra.Command{
+	VerifiedEmailsCmd = &cobra.Command{
 		Use:   "verified-emails",
 		Short: "List enterprise/organization members' verified emails",
 		Long:  "List enterprise/organization members' verified emails",
@@ -77,7 +77,7 @@ type (
 )
 
 func init() {
-	rootCmd.AddCommand(verifiedEmailsCmd)
+	RootCmd.AddCommand(VerifiedEmailsCmd)
 }
 
 func GetUserEmails(cmd *cobra.Command, args []string) (err error) {
