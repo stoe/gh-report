@@ -32,7 +32,7 @@ import (
 )
 
 var (
-	licenseCmd = &cobra.Command{
+	LicenseCmd = &cobra.Command{
 		Use:   "license",
 		Short: "Report on GitHub Enterprise licensing",
 		Long:  "Report on GitHub Enterprise licensing",
@@ -44,7 +44,7 @@ var (
 )
 
 func init() {
-	rootCmd.AddCommand(licenseCmd)
+	RootCmd.AddCommand(LicenseCmd)
 }
 
 type (

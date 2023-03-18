@@ -37,7 +37,7 @@ var (
 	private  = false
 	public   = false
 
-	repoCmd = &cobra.Command{
+	RepoCmd = &cobra.Command{
 		Use:   "repo",
 		Short: "Report on GitHub repositories",
 		Long:  "Report on GitHub repositories",
@@ -107,11 +107,11 @@ type (
 )
 
 func init() {
-	rootCmd.AddCommand(repoCmd)
+	RootCmd.AddCommand(RepoCmd)
 
-	repoCmd.Flags().BoolVar(&internal, "internal", false, "Show internal repositories only")
-	repoCmd.Flags().BoolVar(&private, "private", false, "Show private repositories only")
-	repoCmd.Flags().BoolVar(&public, "public", false, "Show public repositories only")
+	RepoCmd.Flags().BoolVar(&internal, "internal", false, "Show internal repositories only")
+	RepoCmd.Flags().BoolVar(&private, "private", false, "Show private repositories only")
+	RepoCmd.Flags().BoolVar(&public, "public", false, "Show public repositories only")
 }
 
 // GetUses returns GitHub Actions used in workflows

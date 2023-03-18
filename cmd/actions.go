@@ -34,7 +34,7 @@ import (
 )
 
 var (
-	actionsCmd = &cobra.Command{
+	ActionsCmd = &cobra.Command{
 		Use:   "actions",
 		Short: "Report on GitHub Actions",
 		Long:  "Report on GitHub Actions",
@@ -130,9 +130,9 @@ type (
 )
 
 func init() {
-	rootCmd.AddCommand(actionsCmd)
+	RootCmd.AddCommand(ActionsCmd)
 
-	actionsCmd.Flags().BoolVar(&exclude, "exclude", false, "Exclude Github Actions authored by GitHub")
+	ActionsCmd.Flags().BoolVar(&exclude, "exclude", false, "Exclude Github Actions authored by GitHub")
 }
 
 // GetActionsReport returns a report on GitHub Actions

@@ -66,7 +66,7 @@ var (
 
 	sp = spinner.New(spinner.CharSets[14], 40*time.Millisecond)
 
-	rootCmd = &cobra.Command{
+	RootCmd = &cobra.Command{
 		Use:               "gh-report",
 		Short:             "gh cli extension to generate reports",
 		Long:              `gh cli extension to generate enterprise/organization/user/repository reports`,
@@ -98,7 +98,7 @@ type (
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	if err := rootCmd.Execute(); err != nil {
+	if err := RootCmd.Execute(); err != nil {
 		ExitOnError(err)
 	}
 }
@@ -106,22 +106,22 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().BoolVar(&noCache, "no-cache", false, "do not cache results for one hour (default: false)")
-	rootCmd.PersistentFlags().BoolVar(&silent, "silent", false, "do not print any output (default: false)")
+	RootCmd.PersistentFlags().BoolVar(&noCache, "no-cache", false, "do not cache results for one hour (default: false)")
+	RootCmd.PersistentFlags().BoolVar(&silent, "silent", false, "do not print any output (default: false)")
 
-	rootCmd.PersistentFlags().StringVarP(&enterprise, "enterprise", "e", "", "GitHub Enterprise Cloud account")
-	rootCmd.PersistentFlags().StringVarP(&owner, "owner", "o", "", "GitHub account (organization or user account)")
-	rootCmd.PersistentFlags().StringVarP(&repo, "repo", "r", "", "GitHub repository (owner/repo)")
+	RootCmd.PersistentFlags().StringVarP(&enterprise, "enterprise", "e", "", "GitHub Enterprise Cloud account")
+	RootCmd.PersistentFlags().StringVarP(&owner, "owner", "o", "", "GitHub account (organization or user account)")
+	RootCmd.PersistentFlags().StringVarP(&repo, "repo", "r", "", "GitHub repository (owner/repo)")
 
-	rootCmd.PersistentFlags().StringVar(&token, "token", "", "GitHub Personal Access Token (default: gh auth token)")
-	rootCmd.PersistentFlags().StringVar(&hostname, "hostname", "", "GitHub Enterprise Server hostname")
+	RootCmd.PersistentFlags().StringVar(&token, "token", "", "GitHub Personal Access Token (default: gh auth token)")
+	RootCmd.PersistentFlags().StringVar(&hostname, "hostname", "", "GitHub Enterprise Server hostname")
 
-	rootCmd.PersistentFlags().StringVar(&csvPath, "csv", "", "Path to CSV file")
-	rootCmd.PersistentFlags().StringVar(&jsonPath, "json", "", "Path to JSON file")
+	RootCmd.PersistentFlags().StringVar(&csvPath, "csv", "", "Path to CSV file")
+	RootCmd.PersistentFlags().StringVar(&jsonPath, "json", "", "Path to JSON file")
 
-	rootCmd.MarkFlagsMutuallyExclusive("enterprise", "owner")
-	rootCmd.MarkFlagsMutuallyExclusive("enterprise", "repo")
-	rootCmd.MarkFlagsMutuallyExclusive("owner", "repo")
+	RootCmd.MarkFlagsMutuallyExclusive("enterprise", "owner")
+	RootCmd.MarkFlagsMutuallyExclusive("enterprise", "repo")
+	RootCmd.MarkFlagsMutuallyExclusive("owner", "repo")
 }
 
 func initConfig() {
@@ -179,7 +179,7 @@ func run(cmd *cobra.Command, args []string) (err error) {
 
 func ExitOnError(err error) {
 	if err != nil {
-		rootCmd.PrintErrln(red(err.Error()))
+		RootCmd.PrintErrln(red(err.Error()))
 		os.Exit(1)
 	}
 }
