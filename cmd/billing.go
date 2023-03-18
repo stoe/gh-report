@@ -74,20 +74,20 @@ type (
 	}
 
 	ActionsBilling struct {
-		TotalMinutesUsed     int `json:"total_minutes_used"`
-		TotalPaidMinutesUsed int `json:"total_paid_minutes_used"`
-		IncludedMinutes      int `json:"included_minutes"`
+		TotalMinutesUsed     float64 `json:"total_minutes_used"`
+		TotalPaidMinutesUsed float64 `json:"total_paid_minutes_used"`
+		IncludedMinutes      float64 `json:"included_minutes"`
 		MinutesUsedBreakdown struct {
-			MacOS   int `json:"MACOS"`
-			Ubuntu  int `json:"UBUNTU"`
-			Windows int `json:"WINDOWS"`
+			MacOS   float64 `json:"MACOS"`
+			Ubuntu  float64 `json:"UBUNTU"`
+			Windows float64 `json:"WINDOWS"`
 		} `json:"minutes_used_breakdown"`
 	}
 
 	PackagesBilling struct {
-		TotalGigabytesBandwidthUsed     int `json:"total_gigabytes_bandwidth_used"`
-		TotalPaidGigabytesBandwidthUsed int `json:"total_paid_gigabytes_bandwidth_used"`
-		IncludedGigabytesBandwidth      int `json:"included_gigabytes_bandwidth"`
+		TotalGigabytesBandwidthUsed     float64 `json:"total_gigabytes_bandwidth_used"`
+		TotalPaidGigabytesBandwidthUsed float64 `json:"total_paid_gigabytes_bandwidth_used"`
+		IncludedGigabytesBandwidth      float64 `json:"included_gigabytes_bandwidth"`
 	}
 
 	SecurityBilling struct {
@@ -118,11 +118,11 @@ type (
 	}
 
 	BillingReportJSON struct {
-		Organization               string `json:"organization"`
-		ActionMinutesUsed          int    `json:"action_minutes_used"`
-		GigabytesBandwidthUsed     int    `json:"gigabytes_bandwidth_used"`
-		AdvancedSecurityCommitters int    `json:"advanced_security_committers"`
-		EstimatedStorageForMonth   int    `json:"estimated_storage_for_month"`
+		Organization               string  `json:"organization"`
+		ActionMinutesUsed          float64 `json:"action_minutes_used"`
+		GigabytesBandwidthUsed     float64 `json:"gigabytes_bandwidth_used"`
+		AdvancedSecurityCommitters int     `json:"advanced_security_committers"`
+		EstimatedStorageForMonth   int     `json:"estimated_storage_for_month"`
 	}
 )
 
@@ -314,8 +314,8 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 	var td = pterm.TableData{header}
 	var res []BillingReportJSON
 
-	var actionsSum int
-	var packagesSum int
+	var actionsSum float64
+	var packagesSum float64
 	var securitySum int
 	var storageSum int
 
@@ -336,10 +336,10 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 		}
 
 		if actions {
-			data = append(data, fmt.Sprintf("%d", b.Actions.TotalMinutesUsed))
+			data = append(data, fmt.Sprintf("%.2f", b.Actions.TotalMinutesUsed))
 		}
 		if packages {
-			data = append(data, fmt.Sprintf("%d", b.Packages.TotalGigabytesBandwidthUsed))
+			data = append(data, fmt.Sprintf("%.2f", b.Packages.TotalGigabytesBandwidthUsed))
 		}
 		if security {
 			data = append(data, fmt.Sprintf("%d", b.Security.TotalAdvancedSecurityCommitters))
@@ -373,11 +373,11 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 
 	if actions {
 		div = append(div, "")
-		sum = append(sum, bold(actionsSum))
+		sum = append(sum, bold(fmt.Sprintf("%.2f", actionsSum)))
 	}
 	if packages {
 		div = append(div, "")
-		sum = append(sum, bold(packagesSum))
+		sum = append(sum, bold(fmt.Sprintf("%.2f", packagesSum)))
 	}
 	if security {
 		div = append(div, "")
@@ -392,7 +392,7 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 	td = append(td, sum)
 
 	if !silent {
-		pterm.DefaultTable.WithHasHeader().WithHeaderRowSeparator("-").WithData(td).Render()
+		pterm.DefaultTable.WithHasHeader().WithHeaderRowSeparator("-").WithRightAlignment(true).WithData(td).Render()
 	}
 
 	if csvPath != "" {
