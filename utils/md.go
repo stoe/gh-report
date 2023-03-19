@@ -22,30 +22,37 @@ THE SOFTWARE.
 package utils
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"text/template"
 
 	"github.com/fatih/color"
 )
 
-func SaveJsonReport(p string, data interface{}) (err error) {
-	if _, err := os.Stat(filepath.Dir(p)); err != nil {
+func SaveMDReport(path, tmpl string, data interface{}) (err error) {
+	if _, err := os.Stat(filepath.Dir(path)); err != nil {
 		return fmt.Errorf("failed to open directory, error: %w", err)
 	}
 
-	file, err := os.Create(p)
+	file, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("failed to create file, error: %w", err)
 	}
 
 	defer file.Close()
 
-	encoder := json.NewEncoder(file)
-	encoder.Encode(data)
+	t := template.New("report")
+	t, err = t.Parse(tmpl)
+	if err != nil {
+		return err
+	}
+	err = t.Execute(file, data)
+	if err != nil {
+		return err
+	}
 
-	fmt.Fprintf(color.Output, "%s %s\n", HiBlack("JSON saved to:"), p)
+	fmt.Fprintf(color.Output, "%s %s\n", HiBlack("MD saved to:"), path)
 
 	return err
 }

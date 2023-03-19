@@ -51,6 +51,7 @@ var (
 
 	csvPath  string
 	jsonPath string
+	mdPath   string
 
 	user struct {
 		Login string `json:"login"`
@@ -136,8 +137,9 @@ func init() {
 	)
 	RootCmd.PersistentFlags().StringVar(&hostname, "hostname", "github.com", "GitHub Enterprise Server hostname")
 
-	RootCmd.PersistentFlags().StringVar(&csvPath, "csv", "", "Path to CSV file")
-	RootCmd.PersistentFlags().StringVar(&jsonPath, "json", "", "Path to JSON file")
+	RootCmd.PersistentFlags().StringVar(&csvPath, "csv", "", "Path to CSV file, to save report to file")
+	RootCmd.PersistentFlags().StringVar(&jsonPath, "json", "", "Path to JSON file, to save report to file")
+	RootCmd.PersistentFlags().StringVar(&mdPath, "md", "", "Path to MD file, to save report to file")
 
 	RootCmd.MarkFlagsMutuallyExclusive("enterprise", "owner")
 	RootCmd.MarkFlagsMutuallyExclusive("enterprise", "repo")

@@ -32,11 +32,12 @@ Available Commands:
   verified-emails List enterprise/organization members' verified emails
 
 Flags:
-      --csv string          Path to CSV file
+      --csv string          Path to CSV file, to save report to file
   -e, --enterprise string   GitHub Enterprise Cloud account (requires read:enterprise scope)
   -h, --help                help for gh-report
       --hostname string     GitHub Enterprise Server hostname (default "github.com")
-      --json string         Path to JSON file
+      --json string         Path to JSON file, to save report to file
+      --md string           Path to MD file, to save report to file
       --no-cache            Do not cache results for one hour (default "false")
   -o, --owner string        GitHub account organization (requires read:org scope) or user account (requires n/a scope)
   -r, --repo string         GitHub repository (owner/repo), requires repo scope

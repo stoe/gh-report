@@ -45,8 +45,7 @@ var (
 		RunE: GetActionsReport,
 	}
 
-	exclude       = false
-	actionsReport utils.CSVReport
+	exclude = false
 
 	ActionUsesQuery struct {
 		RepositoryOwner struct {
@@ -66,6 +65,16 @@ var (
 		".yml":  true,
 		".yaml": true,
 	}
+
+	actionsReport utils.CSVReport
+
+	mdActionsTemplate = `# GitHub Actions Report
+
+| Owner | Repo | Workflow | Uses | Permissions |
+| ----- | ---- | -------- | ---- | ----------- |
+{{ range . }}{{ $owner := .Owner }}{{ $repo := .Repo }}{{ range .Workflows }}| {{ $owner }} | {{ $repo }} | [{{ .Path }}]({{ .URL }}) | {{ range $i, $v := .Uses }}{{ if $i }}<br/>{{ end }}[{{ $v.Action }}]({{ $v.URL }}) {{ if $v.Version }}@ ` + "`" + `{{ printf "%.7s" $v.Version }}` + "`" + `{{ end }}{{ end }} | {{ range $i, $v := .Permissions }}{{if $i }}<br/>{{ end }} ` + "`" + `{{ $v }}` + "`" + `{{ end }} |
+{{ end }}{{ end }}
+`
 )
 
 type (
@@ -119,7 +128,7 @@ type (
 
 	ActionUses struct {
 		Action  string `json:"action"`
-		Version string `json:"version"`
+		Version string `json:"version,omitempty"`
 		URL     string `json:"url"`
 	}
 
@@ -375,7 +384,11 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	if jsonPath != "" {
-		utils.SaveJsonReport(jsonPath, res)
+		err = utils.SaveJsonReport(jsonPath, res)
+	}
+
+	if mdPath != "" {
+		err = utils.SaveMDReport(mdPath, mdActionsTemplate, res)
 	}
 
 	return err

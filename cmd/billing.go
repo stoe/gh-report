@@ -52,22 +52,16 @@ var (
 	storage  bool
 
 	billingReport utils.CSVReport
+
+	mdBillingTemplate = `# GitHub Billing Report
+{{ $isActions := .IsActions }} {{ $isPackages := .IsPackages }} {{ $isSecurity := .IsSecurity }} {{ $isStorage := .IsStorage }}
+| Organization |{{ if $isActions }} Actions |{{ end }}{{ if $isPackages }} Packages |{{ end }}{{ if $isSecurity }} Security |{{ end }}{{ if $isStorage }} Storage |{{ end }}
+| ------------ |{{ if $isActions }} ------: |{{ end }}{{ if $isPackages }} -------: |{{ end }}{{ if $isSecurity }} -------: |{{ end }}{{ if $isStorage }} ------: |{{ end }}
+{{ range .Data }}| {{ .Organization }} |{{ if $isActions }} {{ .ActionMinutesUsed }} |{{ end }}{{ if $isPackages }} {{ .GigabytesBandwidthUsed }} |{{ end }}{{ if $isSecurity }} {{ .AdvancedSecurityCommitters }} |{{ end }}{{ if $isStorage }} {{ .EstimatedStorageForMonth }} |{{ end }}
+{{ end }}| |{{ if $isActions }}|{{ end }}{{ if $isPackages }}|{{ end }}{{ if $isSecurity }}|{{ end }}{{ if $isStorage }}|{{ end }}
+| **Total** |{{ if $isActions }} **{{ .TotalActions }}** |{{ end }}{{ if $isPackages }} **{{ .TotalPackages }}** |{{ end }}{{ if $isSecurity }} **{{ .TotalSecurity }}** |{{ end }}{{ if $isStorage }} **{{ .TotalStorage }}** |{{ end }}
+`
 )
-
-func init() {
-	BillingCmd.PersistentFlags().BoolVar(&all, "all", true, "Get all billing data")
-	BillingCmd.PersistentFlags().BoolVar(&actions, "actions", false, "Get GitHub Actions billing")
-	BillingCmd.PersistentFlags().BoolVar(&packages, "packages", false, "Get GitHub Packages billing")
-	BillingCmd.PersistentFlags().BoolVar(&security, "security", false, "Get GitHub Advanced Security active committers")
-	BillingCmd.PersistentFlags().BoolVar(&storage, "storage", false, "Get shared storage billing")
-
-	BillingCmd.MarkFlagsMutuallyExclusive("all", "actions")
-	BillingCmd.MarkFlagsMutuallyExclusive("all", "packages")
-	BillingCmd.MarkFlagsMutuallyExclusive("all", "security")
-	BillingCmd.MarkFlagsMutuallyExclusive("all", "storage")
-
-	RootCmd.AddCommand(BillingCmd)
-}
 
 type (
 	Billing struct {
@@ -124,12 +118,27 @@ type (
 
 	BillingReportJSON struct {
 		Organization               string  `json:"organization"`
-		ActionMinutesUsed          float64 `json:"action_minutes_used"`
-		GigabytesBandwidthUsed     float64 `json:"gigabytes_bandwidth_used"`
-		AdvancedSecurityCommitters int     `json:"advanced_security_committers"`
-		EstimatedStorageForMonth   int     `json:"estimated_storage_for_month"`
+		ActionMinutesUsed          float64 `json:"action_minutes_used,omitempty"`
+		GigabytesBandwidthUsed     float64 `json:"gigabytes_bandwidth_used,omitempty"`
+		AdvancedSecurityCommitters int     `json:"advanced_security_committers,omitempty"`
+		EstimatedStorageForMonth   int     `json:"estimated_storage_for_month,omitempty"`
 	}
 )
+
+func init() {
+	BillingCmd.PersistentFlags().BoolVar(&all, "all", true, "Get all billing data")
+	BillingCmd.PersistentFlags().BoolVar(&actions, "actions", false, "Get GitHub Actions billing")
+	BillingCmd.PersistentFlags().BoolVar(&packages, "packages", false, "Get GitHub Packages billing")
+	BillingCmd.PersistentFlags().BoolVar(&security, "security", false, "Get GitHub Advanced Security active committers")
+	BillingCmd.PersistentFlags().BoolVar(&storage, "storage", false, "Get shared storage billing")
+
+	BillingCmd.MarkFlagsMutuallyExclusive("all", "actions")
+	BillingCmd.MarkFlagsMutuallyExclusive("all", "packages")
+	BillingCmd.MarkFlagsMutuallyExclusive("all", "security")
+	BillingCmd.MarkFlagsMutuallyExclusive("all", "storage")
+
+	RootCmd.AddCommand(BillingCmd)
+}
 
 func (c *PushDate) UnmarshalJSON(b []byte) error {
 	value := strings.Trim(string(b), `"`) //get rid of "
@@ -405,8 +414,32 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	if jsonPath != "" {
-		utils.SaveJsonReport(jsonPath, res)
+		err = utils.SaveJsonReport(jsonPath, res)
 	}
 
-	return nil
+	if mdPath != "" {
+		err = utils.SaveMDReport(mdPath, mdBillingTemplate, struct {
+			Data          []BillingReportJSON
+			IsActions     bool
+			IsPackages    bool
+			IsSecurity    bool
+			IsStorage     bool
+			TotalActions  float64
+			TotalPackages float64
+			TotalSecurity int
+			TotalStorage  int
+		}{
+			Data:          res,
+			IsActions:     actions,
+			IsPackages:    packages,
+			IsSecurity:    security,
+			IsStorage:     storage,
+			TotalActions:  actionsSum,
+			TotalPackages: packagesSum,
+			TotalSecurity: securitySum,
+			TotalStorage:  storageSum,
+		})
+	}
+
+	return err
 }
