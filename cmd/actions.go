@@ -227,7 +227,8 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 					fmt.Println(
 						utils.Red(
 							fmt.Sprintf(
-								"\nerror: parsing https://github.com/%s/blob/HEAD/%s",
+								"\nerror: parsing https://%s/%s/blob/HEAD/%s",
+								hostname,
 								r.NameWithOwner, e.Path,
 							),
 						),
@@ -248,20 +249,23 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 							if len(a) == 2 {
 								av = a[1]
 								url = fmt.Sprintf(
-									"https://github.com/%s/tree/%s",
+									"https://%s/%s/tree/%s",
+									hostname,
 									an,
 									av,
 								)
 							} else {
 								url = fmt.Sprintf(
-									"https://github.com/%s/tree/HEAD",
+									"https://%s/%s/tree/HEAD",
+									hostname,
 									an,
 								)
 							}
 
 							if strings.Contains(url, "./") {
 								url = fmt.Sprintf(
-									"https://github.com/%s/%s/tree/HEAD/%s",
+									"https://%s/%s/%s/tree/HEAD/%s",
+									hostname,
 									r.Owner.Login,
 									r.Name,
 									strings.ReplaceAll(an, "./", ""),
@@ -283,7 +287,8 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 					fmt.Println(
 						utils.Red(
 							fmt.Sprintf(
-								"\nerror: parsing https://github.com/%s/blob/HEAD/%s",
+								"\nerror: parsing https://%s/%s/blob/HEAD/%s",
+								hostname,
 								r.NameWithOwner, e.Path,
 							),
 						),
@@ -305,7 +310,8 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 				wfs = append(wfs, ActionWorkflow{
 					Path: e.Path,
 					URL: fmt.Sprintf(
-						"https://github.com/%s/%s/blob/HEAD/%s",
+						"https://%s/%s/%s/blob/HEAD/%s",
+						hostname,
 						r.Owner.Login,
 						r.Name,
 						e.Path,

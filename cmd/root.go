@@ -47,7 +47,7 @@ var (
 	repo       string
 
 	token    string
-	hostname = "github.com"
+	hostname string
 
 	csvPath  string
 	jsonPath string
@@ -129,7 +129,7 @@ func init() {
 	)
 
 	RootCmd.PersistentFlags().StringVarP(&token, "token", "t", "", "GitHub Personal Access Token (default: gh auth token)")
-	RootCmd.PersistentFlags().StringVar(&hostname, "hostname", "", "GitHub Enterprise Server hostname")
+	RootCmd.PersistentFlags().StringVar(&hostname, "hostname", "github.com", "GitHub Enterprise Server hostname")
 
 	RootCmd.PersistentFlags().StringVar(&csvPath, "csv", "", "Path to CSV file")
 	RootCmd.PersistentFlags().StringVar(&jsonPath, "json", "", "Path to JSON file")
@@ -156,10 +156,6 @@ func initConfig() {
 	} else {
 		t, _ := auth.TokenForHost(hostname)
 		opts.AuthToken = t
-	}
-
-	if hostname != "" {
-		opts.Host = strings.ToLower(hostname)
 	}
 
 	restClient, _ = gh.RESTClient(&opts)
