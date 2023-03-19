@@ -35,13 +35,13 @@ Flags:
       --csv string          Path to CSV file
   -e, --enterprise string   GitHub Enterprise Cloud account (requires read:enterprise scope)
   -h, --help                help for gh-report
-      --hostname string     GitHub Enterprise Server hostname
+      --hostname string     GitHub Enterprise Server hostname (default "github.com")
       --json string         Path to JSON file
-      --no-cache            Do not cache results for one hour (default: false)
+      --no-cache            Do not cache results for one hour (default "false")
   -o, --owner string        GitHub account organization (requires read:org scope) or user account (requires n/a scope)
   -r, --repo string         GitHub repository (owner/repo), requires repo scope
-      --silent              Do not print any output (default: false)
-  -t, --token string        GitHub Personal Access Token (default: gh auth token)
+      --silent              Do not print any output (default: "false")
+  -t, --token string        GitHub Personal Access Token (default "gh auth token")
   -v, --version             version for gh-report
 
 Use "gh-report [command] --help" for more information about a command.
