@@ -108,7 +108,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(&owner, "owner", "o", "", "GitHub account (organization or user account)")
 	RootCmd.PersistentFlags().StringVarP(&repo, "repo", "r", "", "GitHub repository (owner/repo)")
 
-	RootCmd.PersistentFlags().StringVar(&token, "token", "", "GitHub Personal Access Token (default: gh auth token)")
+	RootCmd.PersistentFlags().StringVarP(&token, "token", "t", "", "GitHub Personal Access Token (default: gh auth token)")
 	RootCmd.PersistentFlags().StringVar(&hostname, "hostname", "", "GitHub Enterprise Server hostname")
 
 	RootCmd.PersistentFlags().StringVar(&csvPath, "csv", "", "Path to CSV file")

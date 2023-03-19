@@ -42,6 +42,7 @@ Flags:
   -r, --repo string         GitHub repository (owner/repo)
       --silent              do not print any output (default: false)
       --token string        GitHub Personal Access Token (default: gh auth token)
+  -t, --token string        GitHub Personal Access Token (default: gh auth token)
   -v, --version             version for gh-report
 
 Use "gh-report [command] --help" for more information about a command.

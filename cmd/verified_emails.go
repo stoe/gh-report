@@ -38,6 +38,7 @@ var (
 		Short: "List enterprise/organization members' verified emails",
 		Long:  "List enterprise/organization members' verified emails",
 		RunE:  GetUserEmails,
+		Aliases: []string{"emails", "email"},
 	}
 
 	memberQuery struct {

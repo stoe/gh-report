@@ -42,6 +42,7 @@ var (
 		Short: "Report on GitHub repositories",
 		Long:  "Report on GitHub repositories",
 		RunE:  GetRepos,
+		Aliases: []string{"repos"},
 	}
 
 	orgRepositoriesQuery struct {
