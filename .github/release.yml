@@ -11,6 +11,13 @@ changelog:
         - 'bug :bug:'
         - 'bug 🐛'
 
+    - title: 'Dependency Updates 🆙'
+      labels:
+        - 'dependency :robot:'
+        - 'dependency 🤖'
+        - 'github-action :robot:'
+        - 'github-action 🤖'
+
     - title: 'Changes 📦'
       labels:
         - '*'
@@ -24,10 +31,3 @@ changelog:
           - 'dependency 🤖'
           - 'github-action :robot:'
           - 'github-action 🤖'
-
-    - title: 'Dependency Updates 🆙'
-      labels:
-        - 'dependency :robot:'
-        - 'dependency 🤖'
-        - 'github-action :robot:'
-        - 'github-action 🤖'
