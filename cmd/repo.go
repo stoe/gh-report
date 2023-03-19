@@ -154,8 +154,8 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 		for {
 			sp.Suffix = fmt.Sprintf(
 				" fetching repositories report %s %s",
-				cyan(user.Login),
-				hiBlack(fmt.Sprintf("(page %d)", i)),
+				utils.Cyan(user.Login),
+				utils.HiBlack(fmt.Sprintf("(page %d)", i)),
 			)
 
 			graphqlClient.Query("RepoList", &userRepositoriesQuery, variables)
@@ -182,8 +182,8 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 			for {
 				sp.Suffix = fmt.Sprintf(
 					" fetching repositories report %s %s",
-					cyan(org.Login),
-					hiBlack(fmt.Sprintf("(page %d)", i)),
+					utils.Cyan(org.Login),
+					utils.HiBlack(fmt.Sprintf("(page %d)", i)),
 				)
 
 				graphqlClient.Query("RepoList", &orgRepositoriesQuery, variables)

@@ -32,9 +32,9 @@ import (
 	"github.com/cli/go-gh/pkg/api"
 	"github.com/cli/go-gh/pkg/auth"
 	"github.com/cli/go-gh/pkg/repository"
-	"github.com/fatih/color"
 	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
+	"github.com/stoe/gh-report/utils"
 )
 
 var (
@@ -58,11 +58,6 @@ var (
 
 	restClient    api.RESTClient
 	graphqlClient api.GQLClient
-
-	bold    = color.New(color.Bold).SprintFunc()
-	hiBlack = color.New(color.FgHiBlack).SprintFunc()
-	red     = color.New(color.FgRed).SprintFunc()
-	cyan    = color.New(color.FgCyan).SprintFunc()
 
 	sp = spinner.New(spinner.CharSets[14], 40*time.Millisecond)
 
@@ -179,7 +174,7 @@ func run(cmd *cobra.Command, args []string) (err error) {
 
 func ExitOnError(err error) {
 	if err != nil {
-		RootCmd.PrintErrln(red(err.Error()))
+		RootCmd.PrintErrln(utils.Red(err.Error()))
 		os.Exit(1)
 	}
 }

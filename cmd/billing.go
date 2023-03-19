@@ -199,8 +199,8 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 		if actions {
 			sp.Suffix = fmt.Sprintf(
 				" fetching %s billing report %s",
-				cyan(org.Login),
-				hiBlack("(actions data)"),
+				utils.Cyan(org.Login),
+				utils.HiBlack("(actions data)"),
 			)
 
 			if err := restClient.Get(
@@ -220,8 +220,8 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 		if packages {
 			sp.Suffix = fmt.Sprintf(
 				" fetching %s billing report %s",
-				cyan(org.Login),
-				hiBlack("(packages data)"),
+				utils.Cyan(org.Login),
+				utils.HiBlack("(packages data)"),
 			)
 
 			if err := restClient.Get(
@@ -241,8 +241,8 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 		if security {
 			sp.Suffix = fmt.Sprintf(
 				" fetching %s billing report %s",
-				cyan(org.Login),
-				hiBlack("(security data)"),
+				utils.Cyan(org.Login),
+				utils.HiBlack("(security data)"),
 			)
 
 			if err := restClient.Get(
@@ -262,8 +262,8 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 		if storage {
 			sp.Suffix = fmt.Sprintf(
 				" fetching %s billing report %s",
-				cyan(org.Login),
-				hiBlack("(storage data)"),
+				utils.Cyan(org.Login),
+				utils.HiBlack("(storage data)"),
 			)
 
 			if err := restClient.Get(
@@ -373,19 +373,19 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 
 	if actions {
 		div = append(div, "")
-		sum = append(sum, bold(fmt.Sprintf("%.2f", actionsSum)))
+		sum = append(sum, utils.Bold(fmt.Sprintf("%.2f", actionsSum)))
 	}
 	if packages {
 		div = append(div, "")
-		sum = append(sum, bold(fmt.Sprintf("%.2f", packagesSum)))
+		sum = append(sum, utils.Bold(fmt.Sprintf("%.2f", packagesSum)))
 	}
 	if security {
 		div = append(div, "")
-		sum = append(sum, bold(securitySum))
+		sum = append(sum, utils.Bold(securitySum))
 	}
 	if storage {
 		div = append(div, "")
-		sum = append(sum, bold(storageSum))
+		sum = append(sum, utils.Bold(storageSum))
 	}
 
 	td = append(td, div)

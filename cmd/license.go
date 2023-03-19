@@ -111,7 +111,7 @@ func GetLicensing(cmd *cobra.Command, args []string) error {
 
 	sp.Suffix = fmt.Sprintf(
 		" fetching %s license data",
-		cyan(enterprise),
+		utils.Cyan(enterprise),
 	)
 
 	if err := restClient.Get(
@@ -204,7 +204,7 @@ func GetLicensing(cmd *cobra.Command, args []string) error {
 	}
 
 	if csvPath != "" {
-		fmt.Fprintf(color.Output, "%s %s\n", red("CSV report not supported:"), csvPath)
+		fmt.Fprintf(color.Output, "%s %s\n", utils.Red("CSV report not supported:"), csvPath)
 	}
 
 	if jsonPath != "" {

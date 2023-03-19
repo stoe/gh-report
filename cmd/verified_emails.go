@@ -126,8 +126,8 @@ func GetUserEmails(cmd *cobra.Command, args []string) (err error) {
 		for {
 			sp.Suffix = fmt.Sprintf(
 				" fetching verified emails report %s %s",
-				cyan(org.Login),
-				hiBlack(fmt.Sprintf("(page %d)", i)),
+				utils.Cyan(org.Login),
+				utils.HiBlack(fmt.Sprintf("(page %d)", i)),
 			)
 
 			graphqlClient.Query("MemberList", &memberQuery, variables)

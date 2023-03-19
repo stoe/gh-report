@@ -26,5 +26,8 @@ import (
 )
 
 var (
-	hiBlack = color.New(color.FgHiBlack).SprintFunc()
+	Bold    = color.New(color.Bold).SprintFunc()
+	HiBlack = color.New(color.FgHiBlack).SprintFunc()
+	Red     = color.New(color.FgRed).SprintFunc()
+	Cyan    = color.New(color.FgCyan).SprintFunc()
 )

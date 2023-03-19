@@ -179,8 +179,8 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 		for {
 			sp.Suffix = fmt.Sprintf(
 				" fetching actions report %s %s",
-				cyan(owner),
-				hiBlack(fmt.Sprintf("(page %d)", i)),
+				utils.Cyan(owner),
+				utils.HiBlack(fmt.Sprintf("(page %d)", i)),
 			)
 
 			graphqlClient.Query("ActionUses", &ActionUsesQuery, variables)
@@ -221,7 +221,7 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 				var wu WorkflowUses
 				if err := yaml.Unmarshal([]byte(text), &wu); err != nil && !silent {
 					fmt.Println(
-						red(
+						utils.Red(
 							fmt.Sprintf(
 								"\nerror: parsing https://github.com/%s/blob/HEAD/%s",
 								r.NameWithOwner, e.Path,
@@ -277,7 +277,7 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 				var wp ActionPermissions
 				if err := yaml.Unmarshal([]byte(text), &wp); err != nil && !silent {
 					fmt.Println(
-						red(
+						utils.Red(
 							fmt.Sprintf(
 								"\nerror: parsing https://github.com/%s/blob/HEAD/%s",
 								r.NameWithOwner, e.Path,
