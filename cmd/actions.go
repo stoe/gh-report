@@ -26,6 +26,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/pterm/pterm"
 	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
@@ -37,8 +38,11 @@ var (
 	ActionsCmd = &cobra.Command{
 		Use:   "actions",
 		Short: "Report on GitHub Actions",
-		Long:  "Report on GitHub Actions",
-		RunE:  GetActionsReport,
+		Long: heredoc.Docf(
+			`Report on GitHub Actions, requires %s scope`,
+			utils.HiBlack("repo"),
+		),
+		RunE: GetActionsReport,
 	}
 
 	exclude       = false

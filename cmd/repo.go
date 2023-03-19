@@ -26,6 +26,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/pterm/pterm"
 	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
@@ -40,9 +41,13 @@ var (
 	RepoCmd = &cobra.Command{
 		Use:   "repo",
 		Short: "Report on GitHub repositories",
-		Long:  "Report on GitHub repositories",
-		RunE:  GetRepos,
+		Long: heredoc.Docf(
+			`Report on GitHub repositories, requires %s and/or %s scope`,
+			utils.HiBlack("read:enterprise"),
+			utils.HiBlack("read:org"),
+		),
 		Aliases: []string{"repos"},
+		RunE:    GetRepos,
 	}
 
 	orgRepositoriesQuery struct {

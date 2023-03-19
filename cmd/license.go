@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/fatih/color"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
@@ -35,8 +36,12 @@ var (
 	LicenseCmd = &cobra.Command{
 		Use:   "license",
 		Short: "Report on GitHub Enterprise licensing",
-		Long:  "Report on GitHub Enterprise licensing",
-		RunE:  GetLicensing,
+		Long: heredoc.Docf(
+			`Report on GitHub Enterprise licensing, requires %s and %s scope`,
+			utils.HiBlack("read:enterprise"),
+			utils.HiBlack("user:email"),
+		),
+		RunE: GetLicensing,
 	}
 
 	licenseData LicenseData

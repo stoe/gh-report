@@ -3,6 +3,7 @@ module github.com/stoe/gh-report
 go 1.20
 
 require (
+	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/briandowns/spinner v1.23.0
 	github.com/cli/go-gh v1.2.1
 	github.com/fatih/color v1.15.0

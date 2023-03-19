@@ -26,6 +26,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/pterm/pterm"
 	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
@@ -36,9 +37,14 @@ var (
 	VerifiedEmailsCmd = &cobra.Command{
 		Use:   "verified-emails",
 		Short: "List enterprise/organization members' verified emails",
-		Long:  "List enterprise/organization members' verified emails",
-		RunE:  GetUserEmails,
+		Long: heredoc.Docf(
+			`List enterprise/organization members' verified emails, requires %s, %s and/or %s scope`,
+			utils.HiBlack("user:email"),
+			utils.HiBlack("read:enterprise"),
+			utils.HiBlack("read:org"),
+		),
 		Aliases: []string{"emails", "email"},
+		RunE:    GetUserEmails,
 	}
 
 	memberQuery struct {

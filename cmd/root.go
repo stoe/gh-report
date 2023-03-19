@@ -27,6 +27,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/briandowns/spinner"
 	"github.com/cli/go-gh"
 	"github.com/cli/go-gh/pkg/api"
@@ -64,7 +65,7 @@ var (
 	RootCmd = &cobra.Command{
 		Use:               "gh-report",
 		Short:             "gh cli extension to generate reports",
-		Long:              `gh cli extension to generate enterprise/organization/user/repository reports`,
+		Long:              "gh cli extension to generate enterprise/organization/user/repository reports",
 		Version:           "2.1.0",
 		PersistentPreRunE: run,
 	}
@@ -101,12 +102,31 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	RootCmd.PersistentFlags().BoolVar(&noCache, "no-cache", false, "do not cache results for one hour (default: false)")
-	RootCmd.PersistentFlags().BoolVar(&silent, "silent", false, "do not print any output (default: false)")
+	RootCmd.PersistentFlags().BoolVar(&noCache, "no-cache", false, "Do not cache results for one hour (default: false)")
+	RootCmd.PersistentFlags().BoolVar(&silent, "silent", false, "Do not print any output (default: false)")
 
-	RootCmd.PersistentFlags().StringVarP(&enterprise, "enterprise", "e", "", "GitHub Enterprise Cloud account")
-	RootCmd.PersistentFlags().StringVarP(&owner, "owner", "o", "", "GitHub account (organization or user account)")
-	RootCmd.PersistentFlags().StringVarP(&repo, "repo", "r", "", "GitHub repository (owner/repo)")
+	RootCmd.PersistentFlags().StringVarP(
+		&enterprise, "enterprise", "e", "",
+		heredoc.Docf(
+			`GitHub Enterprise Cloud account (requires %s scope)`,
+			utils.HiBlack("read:enterprise"),
+		),
+	)
+	RootCmd.PersistentFlags().StringVarP(
+		&owner, "owner", "o", "",
+		heredoc.Docf(
+			`GitHub account organization (requires %s scope) or user account (requires %s scope)`,
+			utils.HiBlack("read:org"),
+			utils.HiBlack("n/a"),
+		),
+	)
+	RootCmd.PersistentFlags().StringVarP(
+		&repo, "repo", "r", "",
+		heredoc.Docf(
+			`GitHub repository (owner/repo), requires %s scope`,
+			utils.HiBlack("repo"),
+		),
+	)
 
 	RootCmd.PersistentFlags().StringVarP(&token, "token", "t", "", "GitHub Personal Access Token (default: gh auth token)")
 	RootCmd.PersistentFlags().StringVar(&hostname, "hostname", "", "GitHub Enterprise Server hostname")

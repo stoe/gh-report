@@ -26,6 +26,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/pterm/pterm"
 	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
@@ -36,8 +37,12 @@ var (
 	BillingCmd = &cobra.Command{
 		Use:   "billing",
 		Short: "Report on GitHub billing",
-		Long:  "Report on GitHub billing",
-		RunE:  GetBilling,
+		Long: heredoc.Docf(
+			`Report on GitHub billing, requires %s and/or %s scope`,
+			utils.HiBlack("read:enterprise"),
+			utils.HiBlack("read:org"),
+		),
+		RunE: GetBilling,
 	}
 
 	all      bool
