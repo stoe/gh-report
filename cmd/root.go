@@ -102,8 +102,10 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	RootCmd.PersistentFlags().BoolVar(&noCache, "no-cache", false, "Do not cache results for one hour (default: false)")
-	RootCmd.PersistentFlags().BoolVar(&silent, "silent", false, "Do not print any output (default: false)")
+	RootCmd.PersistentFlags().BoolVar(&noCache, "no-cache", false,
+		`Do not cache results for one hour (default "false")`,
+	)
+	RootCmd.PersistentFlags().BoolVar(&silent, "silent", false, `Do not print any output (default: "false")`)
 
 	RootCmd.PersistentFlags().StringVarP(
 		&enterprise, "enterprise", "e", "",
@@ -128,7 +130,10 @@ func init() {
 		),
 	)
 
-	RootCmd.PersistentFlags().StringVarP(&token, "token", "t", "", "GitHub Personal Access Token (default: gh auth token)")
+	RootCmd.PersistentFlags().StringVarP(
+		&token, "token", "t", "",
+		`GitHub Personal Access Token (default "gh auth token")`,
+	)
 	RootCmd.PersistentFlags().StringVar(&hostname, "hostname", "github.com", "GitHub Enterprise Server hostname")
 
 	RootCmd.PersistentFlags().StringVar(&csvPath, "csv", "", "Path to CSV file")
