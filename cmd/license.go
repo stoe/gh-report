@@ -46,6 +46,20 @@ var (
 
 	licenseData LicenseData
 	// licenseReport utils.CSVReport
+
+	mdLicenseReport = `# GitHub License Report
+
+**Purchased**: {{ .Purchased }}
+**Consumed**: {{ .Consumed }}
+**Free**: {{ .Free }}
+
+## Users
+
+| Login | Name | Verified Emails | License Type | GitHub Enterprise Cloud User | GitHub Enterprise Server User | Visual Studio User | Accounts |
+| --- | --- | --- | --- | --- | --- | --- | --: |
+{{ range .Users }}| {{ .Login }} | {{ .Name }} | {{ range $i, $v := .VerifiedDomainEmails }}{{ if $i }}<br/>{{ end }}{{ $v }}{{ end }} | {{ .LicenseType }} | ` + "`" + `{{ .GHEC }}` + "`" + ` | ` + "`" + `{{ .GHES }}` + "`" + ` | ` + "`" + `{{ .VSS }}` + "`" + ` | {{ .Accounts }} |
+{{ end }}
+`
 )
 
 func init() {
@@ -99,7 +113,7 @@ type (
 )
 
 // GetLicensing returns GitHub billing information
-func GetLicensing(cmd *cobra.Command, args []string) error {
+func GetLicensing(cmd *cobra.Command, args []string) (err error) {
 	if enterprise == "" {
 		return fmt.Errorf("--enterprise|-e is required")
 	}
@@ -213,8 +227,12 @@ func GetLicensing(cmd *cobra.Command, args []string) error {
 	}
 
 	if jsonPath != "" {
-		utils.SaveJsonReport(jsonPath, res)
+		err = utils.SaveJsonReport(jsonPath, res)
 	}
 
-	return nil
+	if mdPath != "" {
+		err = utils.SaveMDReport(mdPath, mdLicenseReport, res)
+	}
+
+	return err
 }

@@ -63,6 +63,14 @@ var (
 	members []memberDetails
 
 	emailReport utils.CSVReport
+
+	mdEmailReport = `# GitHub Emails Report
+
+| Login | Name | Email | Verified Domain Emails |
+| --- | --- | --- | --- |
+{{ range . }}| {{ .Login }} | {{ .Name }} | {{ .Email }} | {{ range $i, $v := .VerifiedDomainEmails }}{{ if $i }}<br/>{{ end }}{{ $v }}{{ end }} |
+{{ end }}
+`
 )
 
 type (
@@ -208,7 +216,11 @@ func GetUserEmails(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	if jsonPath != "" {
-		utils.SaveJsonReport(jsonPath, res)
+		err = utils.SaveJsonReport(jsonPath, res)
+	}
+
+	if mdPath != "" {
+		err = utils.SaveMDReport(mdPath, mdEmailReport, res)
 	}
 
 	return err

@@ -65,6 +65,14 @@ var (
 	repositories []Repository
 
 	repoReport utils.CSVReport
+
+	mdReposReport = `# GitHub Repositories Report
+
+| Owner | Name | Visibility | Is Archived | Is Fork | Default Branch | Disk Usage | Created At | Updated At |
+| ----- | ---- | ---------- | ----------- | ------- | -------------- | ---------: | ---------- | ---------- |
+{{ range . }}| {{ .Owner }} | {{ .Repo }} | {{ .Visibility }} | {{ .Archived }} | {{ .Fork }} | {{ .DefaultBranch }} | {{ .Disk }} | {{ .CreatedAt.UTC.Format "2006-01-02 15:04:05 MST" }} | {{ .UpdatedAt.UTC.Format "2006-01-02 15:04:05 MST" }} |
+{{ end }}
+`
 )
 
 type (
@@ -247,8 +255,8 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 			fmt.Sprintf("%t", repo.IsFork),
 			repo.DefaultBranchRef.Name,
 			fmt.Sprintf("%d", repo.DiskUsage),
-			repo.CreatedAt.Format("2006-01-02"),
-			repo.UpdatedAt.Format("2006-01-02"),
+			repo.CreatedAt.UTC().Format("2006-01-02 15:04:05 MST"),
+			repo.UpdatedAt.UTC().Format("2006-01-02 15:04:05 MST"),
 		}
 
 		res = append(res, RepoReportJSON{
@@ -279,7 +287,11 @@ func GetRepos(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	if jsonPath != "" {
-		utils.SaveJsonReport(jsonPath, res)
+		err = utils.SaveJsonReport(jsonPath, res)
+	}
+
+	if mdPath != "" {
+		err = utils.SaveMDReport(mdPath, mdReposReport, res)
 	}
 
 	return err
