@@ -28,6 +28,9 @@ archives:
 checksum:
   name_template: "checksums.txt"
 
+signs:
+  - artifacts: checksum
+
 snapshot:
   name_template: "{{ incpatch .Version }}"
 
