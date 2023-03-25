@@ -28,7 +28,7 @@ import (
 	"github.com/MakeNowJust/heredoc"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
-	"github.com/stoe/gh-report/utils"
+	"github.com/stoe/gh-report/internal/utils"
 )
 
 var (

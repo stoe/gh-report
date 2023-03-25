@@ -35,7 +35,7 @@ import (
 	"github.com/cli/go-gh/pkg/repository"
 	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
-	"github.com/stoe/gh-report/utils"
+	"github.com/stoe/gh-report/internal/utils"
 )
 
 var (
