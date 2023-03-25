@@ -15,6 +15,13 @@ jobs:
     steps:
       - uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f
 
+      - uses: crazy-max/ghaction-import-gpg@v5
+        id: gpg
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
       - uses: cli/gh-extension-precompile@640911b0a0f2adb89a07a8ba547053cbd4001e1e
         with:
           go_version: 1.20.x
+          gpg_fingerprint: ${{ steps.gpg.outputs.fingerprint }}
