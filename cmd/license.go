@@ -26,7 +26,6 @@ import (
 	"strings"
 
 	"github.com/MakeNowJust/heredoc"
-	"github.com/fatih/color"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"github.com/stoe/gh-report/utils"
@@ -44,8 +43,8 @@ var (
 		RunE: GetLicensing,
 	}
 
-	licenseData LicenseData
-	// licenseReport utils.CSVReport
+	licenseData   LicenseData
+	licenseReport utils.CSVReport
 
 	mdLicenseReport = `# GitHub License Report
 
@@ -151,6 +150,27 @@ func GetLicensing(cmd *cobra.Command, args []string) (err error) {
 		"consumed",
 		"free",
 	}}
+	header := []string{
+		"login",
+		"name",
+		"verified_emails",
+		"license_type",
+		"ghec",
+		"ghes",
+		"vss",
+		"accounts",
+	}
+
+	// start CSV file
+	if csvPath != "" {
+		licenseReport, err = utils.NewCSVReport(csvPath)
+
+		if err != nil {
+			return err
+		}
+
+		licenseReport.SetHeader(header)
+	}
 
 	td = append(td, []string{
 		fmt.Sprintf("%d", licenseData.TotalSeatsPurchased),
@@ -163,42 +183,10 @@ func GetLicensing(cmd *cobra.Command, args []string) (err error) {
 		fmt.Println("")
 	}
 
-	utd := pterm.TableData{[]string{
-		"login",
-		"name",
-		"verified_emails",
-		"license_type",
-		"ghec",
-		"ghes",
-		"vss",
-		"accounts",
-	}}
+	utd := pterm.TableData{header}
 
 	var ru []LicenseUser
 	for _, u := range licenseData.Users {
-		ud, us, uv := "❌", "❌", "❌"
-
-		if u.DotcomUser {
-			ud = "✅"
-		}
-		if u.ServerUser {
-			us = "✅"
-		}
-		if u.VSSUser {
-			uv = "✅"
-		}
-
-		utd = append(utd, []string{
-			u.DotcomLogin,
-			u.DotcomName,
-			strings.Join(u.DotcomVerifiedDomainEmails, ", "),
-			u.LicesneType,
-			ud,
-			us,
-			uv,
-			fmt.Sprintf("%d", u.TotalUserAccounts),
-		})
-
 		ru = append(ru, LicenseUser{
 			Login:                u.DotcomLogin,
 			Name:                 u.DotcomName,
@@ -209,6 +197,23 @@ func GetLicensing(cmd *cobra.Command, args []string) (err error) {
 			VSS:                  u.VSSUser,
 			Accounts:             u.TotalUserAccounts,
 		})
+
+		data := []string{
+			u.DotcomLogin,
+			u.DotcomName,
+			strings.Join(u.DotcomVerifiedDomainEmails, ", "),
+			u.LicesneType,
+			fmt.Sprintf("%t", u.DotcomUser),
+			fmt.Sprintf("%t", u.ServerUser),
+			fmt.Sprintf("%t", u.VSSUser),
+			fmt.Sprintf("%d", u.TotalUserAccounts),
+		}
+
+		utd = append(utd, data)
+
+		if csvPath != "" {
+			licenseReport.AddData(data)
+		}
 	}
 
 	res := LicenseReportJSON{
@@ -223,7 +228,7 @@ func GetLicensing(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	if csvPath != "" {
-		fmt.Fprintf(color.Output, "%s %s\n", utils.Red("CSV report not supported:"), csvPath)
+		licenseReport.Save()
 	}
 
 	if jsonPath != "" {
