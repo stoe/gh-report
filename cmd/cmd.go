@@ -64,7 +64,7 @@ var (
 	sp = spinner.New(spinner.CharSets[14], 40*time.Millisecond)
 
 	RootCmd = &cobra.Command{
-		Use:               "gh-report",
+		Use:               "report",
 		Short:             "gh cli extension to generate reports",
 		Long:              "gh cli extension to generate enterprise/organization/user/repository reports",
 		Version:           "2.2.0",
@@ -111,23 +111,22 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(
 		&enterprise, "enterprise", "e", "",
 		heredoc.Docf(
-			`GitHub Enterprise Cloud account (requires %s scope)`,
-			utils.HiBlack("read:enterprise"),
+			`GitHub Enterprise Cloud account (requires %[1]sread:enterprise%[1]s scope)`,
+			"`",
 		),
 	)
 	RootCmd.PersistentFlags().StringVarP(
 		&owner, "owner", "o", "",
 		heredoc.Docf(
-			`GitHub account organization (requires %s scope) or user account (requires %s scope)`,
-			utils.HiBlack("read:org"),
-			utils.HiBlack("n/a"),
+			`GitHub account organization (requires %[1]sread:org%[1]s scope) or user account (requires %[1]sn/a%[1]s scope)`,
+			"`",
 		),
 	)
 	RootCmd.PersistentFlags().StringVarP(
 		&repo, "repo", "r", "",
 		heredoc.Docf(
-			`GitHub repository (owner/repo), requires %s scope`,
-			utils.HiBlack("repo"),
+			`GitHub repository (owner/repo), requires %[1]srepo%[1]s scope`,
+			"`",
 		),
 	)
 

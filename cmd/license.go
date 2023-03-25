@@ -36,9 +36,8 @@ var (
 		Use:   "license",
 		Short: "Report on GitHub Enterprise licensing",
 		Long: heredoc.Docf(
-			`Report on GitHub Enterprise licensing, requires %s and %s scope`,
-			utils.HiBlack("read:enterprise"),
-			utils.HiBlack("user:email"),
+			`Report on GitHub Enterprise licensing, requires %[1]sread:enterprise%[1]s and %[1]suser:email%[1]s scope`,
+			"`",
 		),
 		RunE: GetLicensing,
 	}

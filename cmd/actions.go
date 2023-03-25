@@ -39,8 +39,8 @@ var (
 		Use:   "actions",
 		Short: "Report on GitHub Actions",
 		Long: heredoc.Docf(
-			`Report on GitHub Actions, requires %s scope`,
-			utils.HiBlack("repo"),
+			`Report on GitHub Actions, requires %[1]srepo%[1]s scope`,
+			"`",
 		),
 		RunE: GetActionsReport,
 	}

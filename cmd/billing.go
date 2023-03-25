@@ -38,9 +38,8 @@ var (
 		Use:   "billing",
 		Short: "Report on GitHub billing",
 		Long: heredoc.Docf(
-			`Report on GitHub billing, requires %s and/or %s scope`,
-			utils.HiBlack("read:enterprise"),
-			utils.HiBlack("read:org"),
+			`Report on GitHub billing, requires %[1]sread:enterprise%[1]s and/or %[1]sread:org%[1]s scope`,
+			"`",
 		),
 		RunE: GetBilling,
 	}

@@ -42,9 +42,8 @@ var (
 		Use:   "repo",
 		Short: "Report on GitHub repositories",
 		Long: heredoc.Docf(
-			`Report on GitHub repositories, requires %s and/or %s scope`,
-			utils.HiBlack("read:enterprise"),
-			utils.HiBlack("read:org"),
+			`Report on GitHub repositories, requires %[1]sread:enterprise%[1]s and/or %[1]sread:org%[1]s scope`,
+			"`",
 		),
 		Aliases: []string{"repos"},
 		RunE:    GetRepos,

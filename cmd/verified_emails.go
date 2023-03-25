@@ -38,10 +38,8 @@ var (
 		Use:   "verified-emails",
 		Short: "List enterprise/organization members' verified emails",
 		Long: heredoc.Docf(
-			`List enterprise/organization members' verified emails, requires %s, %s and/or %s scope`,
-			utils.HiBlack("user:email"),
-			utils.HiBlack("read:enterprise"),
-			utils.HiBlack("read:org"),
+			`List enterprise/organization members' verified emails, requires %[1]suser:email%[1]s, %[1]sread:enterprise%[1]s and/or %[1]sread:org%[1]s scope`,
+			"`",
 		),
 		Aliases: []string{"emails", "email"},
 		RunE:    GetUserEmails,
