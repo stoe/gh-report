@@ -69,6 +69,7 @@ var (
 		Long:              "gh cli extension to generate enterprise/organization/user/repository reports",
 		Version:           "2.3.0",
 		PersistentPreRunE: run,
+		DisableAutoGenTag: true,
 	}
 
 	enterpriseQuery struct {
