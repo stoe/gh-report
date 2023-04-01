@@ -147,7 +147,7 @@ func init() {
 }
 
 func initConfig() {
-	cache := time.Hour
+	cache := 24 * time.Hour
 
 	if noCache {
 		cache = 0
