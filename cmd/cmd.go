@@ -162,10 +162,11 @@ func initConfig() {
 	if token != "" {
 		opts.AuthToken = token
 	} else {
-		t, _ := auth.TokenForHost(hostname)
+		t, d := auth.TokenForHost(hostname)
 
-		if t == "" {
-			ExitOnError(fmt.Errorf("no token found for %s", hostname))
+		if d == "" {
+			fmt.Println("No token found for host", hostname)
+			os.Exit(1)
 		}
 
 		opts.AuthToken = t
