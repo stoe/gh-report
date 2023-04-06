@@ -155,12 +155,18 @@ func initConfig() {
 	opts := api.ClientOptions{
 		EnableCache: !noCache,
 		CacheTTL:    cache,
+		Host:        hostname,
 	}
 
 	if token != "" {
 		opts.AuthToken = token
 	} else {
 		t, _ := auth.TokenForHost(hostname)
+
+		if t == "" {
+			ExitOnError(fmt.Errorf("no token found for %s", hostname))
+		}
+
 		opts.AuthToken = t
 	}
 
