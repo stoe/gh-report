@@ -67,7 +67,7 @@ var (
 		Use:               "report",
 		Short:             "gh cli extension to generate reports",
 		Long:              "gh cli extension to generate enterprise/organization/user/repository reports",
-		Version:           "2.2.1",
+		Version:           "2.3.0",
 		PersistentPreRunE: run,
 	}
 
