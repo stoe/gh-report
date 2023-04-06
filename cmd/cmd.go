@@ -155,6 +155,7 @@ func initConfig() {
 	opts := api.ClientOptions{
 		EnableCache: !noCache,
 		CacheTTL:    cache,
+		Host:        hostname,
 	}
 
 	if token != "" {
