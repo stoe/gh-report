@@ -202,6 +202,7 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	var billing []Billing
+	securitySkipped := false
 
 	for _, org := range organizations {
 		var actionsBillingData ActionsBilling
@@ -265,7 +266,19 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 				),
 				&securityBillingData,
 			); err != nil {
-				return err
+				// silently ignore 403 errors
+				if strings.Contains(err.Error(), "403") {
+					sp.Suffix = fmt.Sprintf(
+						" fetching %s billing report %s",
+						utils.Cyan(org.Login),
+						utils.Orange("(security not enabled, skipping)"),
+					)
+
+					securitySkipped = true
+					continue
+				} else {
+					return err
+				}
 			}
 
 			// sleep for 1 second to avoid rate limiting
@@ -317,7 +330,7 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 	if packages {
 		header = append(header, "gigabytes_bandwidth_used")
 	}
-	if security {
+	if security && !securitySkipped {
 		header = append(header, "advanced_security_committers")
 	}
 	if storage {
@@ -354,7 +367,7 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 		if packages {
 			data = append(data, fmt.Sprintf("%.2f", b.Packages.TotalGigabytesBandwidthUsed))
 		}
-		if security {
+		if security && !securitySkipped {
 			data = append(data, fmt.Sprintf("%d", b.Security.TotalAdvancedSecurityCommitters))
 		}
 		if storage {
@@ -363,7 +376,9 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 
 		actionsSum += b.Actions.TotalMinutesUsed
 		packagesSum += b.Packages.TotalGigabytesBandwidthUsed
-		securitySum += b.Security.TotalAdvancedSecurityCommitters
+		if security && !securitySkipped {
+			securitySum += b.Security.TotalAdvancedSecurityCommitters
+		}
 		storageSum += b.Storage.EstimatedStorageForMonth
 
 		td = append(td, data)
@@ -392,7 +407,7 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 		div = append(div, "")
 		sum = append(sum, utils.Bold(fmt.Sprintf("%.2f", packagesSum)))
 	}
-	if security {
+	if security && !securitySkipped {
 		div = append(div, "")
 		sum = append(sum, utils.Bold(securitySum))
 	}
