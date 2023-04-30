@@ -7,16 +7,14 @@ updates:
       day: 'saturday'
       timezone: 'Europe/Berlin'
     commit-message:
-      prefix: '🆙 action'
+      prefix: '⬆️ action'
     labels:
       - 'github-action :robot:'
 
   - package-ecosystem: 'gomod'
     directory: '/'
     schedule:
-      interval: 'weekly'
-      day: 'saturday'
-      timezone: 'Europe/Berlin'
+      interval: 'monthly'
     commit-message:
       prefix: '🆙 go'
       include: 'scope'

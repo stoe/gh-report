@@ -1,0 +1,23 @@
+name: combine-dependabot-prs
+
+on:
+  schedule:
+    # run every Friday at 00:42 UTC
+    - cron: '42 0 * * 5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+
+jobs:
+  combine-prs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: combine-prs
+        id: combine-prs
+        uses: github/combine-prs@8e631fc3eb9337039c61b2b89219bf2a2259a4d6
+        with:
+          pr_title: 🤖 Combined Dependabot PRs
