@@ -2,8 +2,8 @@ name: combine dependabot prs
 
 on:
   schedule:
-    # run every Friday at 00:42 UTC
-    - cron: '42 0 * * 5'
+    # run every first Saturday of the month at 00:42 UTC
+    - cron: '42 0 1-7 * 6'
   workflow_dispatch:
 
 permissions:
@@ -16,8 +16,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: combine-prs
+      - name: Use GitHub App Token
+        uses: peter-murray/workflow-application-token-action@8e1ba3bf1619726336414f1014e37f17fbadf1db
+        id: generate_token
+        with:
+          application_id: ${{ secrets.APP_ID }}
+          application_private_key: ${{ secrets.PRIVATE_KEY }}
+
+      - name: Combine PRs
         id: combine-prs
         uses: github/combine-prs@8e631fc3eb9337039c61b2b89219bf2a2259a4d6
         with:
-          pr_title: 🤖 Combined Dependabot PRs
+          pr_title: 🤖 Combined @dependabot PRs
+          github_token: ${{ steps.generate_token.outputs.token }}
