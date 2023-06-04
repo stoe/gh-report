@@ -1,33 +1,26 @@
 changelog:
   exclude: {}
   categories:
-    - title: 'Features 🚀'
-      labels:
-        - 'feature-request :construction:'
-        - 'feature-request 🚧'
-
-    - title: 'Bug Fixes 🐛'
-      labels:
-        - 'bug :bug:'
-        - 'bug 🐛'
-
-    - title: 'Dependency Updates 🆙'
-      labels:
-        - 'dependency :robot:'
-        - 'dependency 🤖'
-        - 'github-action :robot:'
-        - 'github-action 🤖'
-
-    - title: 'Changes 📦'
+    - title: '📦 Changes'
       labels:
         - '*'
       exclude:
         labels:
-          - 'feature-request :construction:'
-          - 'feature-request 🚧'
           - 'bug :bug:'
           - 'bug 🐛'
           - 'dependency :robot:'
           - 'dependency 🤖'
           - 'github-action :robot:'
           - 'github-action 🤖'
+
+    - title: '🐛 Bug Fixes'
+      labels:
+        - 'bug :bug:'
+        - 'bug 🐛'
+
+    - title: '🆙 Dependencies'
+      labels:
+        - 'dependency :robot:'
+        - 'dependency 🤖'
+        - 'github-action :robot:'
+        - 'github-action 🤖'
