@@ -4,6 +4,10 @@ updates:
     directory: '/'
     schedule:
       interval: 'monthly'
+    groups:
+      all-dependencies:
+        patterns:
+          - '*'
     commit-message:
       prefix: '⬆️ action'
     labels:
@@ -13,8 +17,11 @@ updates:
     directory: '/'
     schedule:
       interval: 'monthly'
+    groups:
+      all-dependencies:
+        patterns:
+          - '*'
     commit-message:
       prefix: '⬆️ go'
-      include: 'scope'
     labels:
       - 'dependency :robot:'
