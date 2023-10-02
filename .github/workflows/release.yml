@@ -13,9 +13,9 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
+      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
 
-      - uses: crazy-max/ghaction-import-gpg@v5
+      - uses: crazy-max/ghaction-import-gpg@v6
         id: gpg
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
