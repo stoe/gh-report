@@ -24,7 +24,7 @@ jobs:
       LGTM_INDEX_FILTERS: "exclude:dist/*"
 
     steps:
-      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
 
       - uses: github/codeql-action/init@81644f35ff20aa6b0e7b936f0e8716419ba7d295
         with:
