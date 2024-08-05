@@ -4,12 +4,12 @@ go 1.20
 
 require (
 	github.com/MakeNowJust/heredoc v1.0.0
-	github.com/briandowns/spinner v1.23.0
+	github.com/briandowns/spinner v1.23.1
 	github.com/cli/go-gh v1.2.1
-	github.com/fatih/color v1.16.0
+	github.com/fatih/color v1.17.0
 	github.com/pterm/pterm v0.12.63
 	github.com/shurcooL/graphql v0.0.0-20220606043923-3cf50f8a0a29
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -21,7 +21,7 @@ require (
 	github.com/cli/safeexec v1.0.1 // indirect
 	github.com/cli/shurcooL-graphql v0.0.3 // indirect
 	github.com/containerd/console v1.0.3 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.3 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
 	github.com/gookit/color v1.5.3 // indirect
 	github.com/henvic/httpretty v0.1.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
