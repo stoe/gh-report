@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/MakeNowJust/heredoc"
+	"github.com/cli/go-gh"
 	"github.com/pterm/pterm"
 	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
@@ -57,6 +58,12 @@ var (
 				Nodes []ActionUsesRepository
 			} `graphql:"repositories(first: 10, after: $page, affiliations: OWNER, orderBy: { field: NAME, direction: DESC })"`
 		} `graphql:"repositoryOwner(login: $owner)"`
+	}
+
+	ActionRepositoryUsesQuery struct {
+		Repository struct {
+			ActionUsesRepository
+		} `graphql:"repository(owner: $owner, name: $repo)"`
 	}
 
 	aur []ActionUsesRepository
@@ -150,11 +157,28 @@ func init() {
 
 // GetActionsReport returns a report on GitHub Actions
 func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
-	if repo != "" {
-		return fmt.Errorf("Repository not (yet) supported for this report")
-	}
-
 	sp.Start()
+
+	if repo != "" {
+		cr, _ := gh.CurrentRepository()
+
+		o := cr.Owner()
+		r := cr.Name()
+
+		variables := map[string]interface{}{
+			"owner": graphql.String(o),
+			"repo":  graphql.String(r),
+			"ref":   graphql.String("HEAD:.github/workflows"),
+		}
+
+		sp.Suffix = fmt.Sprintf(
+			" fetching actions report for %s",
+			utils.HiBlack(o+"/"+r),
+		)
+
+		graphqlClient.Query("ActionUses", &ActionRepositoryUsesQuery, variables)
+		aur = append(aur, ActionRepositoryUsesQuery.Repository.ActionUsesRepository)
+	}
 
 	if enterprise != "" {
 		variables := map[string]interface{}{
@@ -174,172 +198,174 @@ func GetActionsReport(cmd *cobra.Command, args []string) (err error) {
 		}
 	}
 
-	if owner != "" {
+	if owner != "" && repo == "" {
 		organizations = append(organizations, Organization{Login: owner})
 	}
 
 	var res = []ActionUsesReport{}
 
-	for _, o := range organizations {
-		owner = o.Login
-		variables := map[string]interface{}{
-			"owner": graphql.String(owner),
-			"page":  (*graphql.String)(nil),
-			"ref":   graphql.String("HEAD:.github/workflows"),
-		}
-
-		var i = 1
-		for {
-			sp.Suffix = fmt.Sprintf(
-				" fetching actions report %s %s",
-				utils.Cyan(owner),
-				utils.HiBlack(fmt.Sprintf("(page %d)", i)),
-			)
-
-			graphqlClient.Query("ActionUses", &ActionUsesQuery, variables)
-			aur = append(aur, ActionUsesQuery.RepositoryOwner.Repositories.Nodes...)
-
-			if !ActionUsesQuery.RepositoryOwner.Repositories.PageInfo.HasNextPage {
-				break
+	if len(organizations) > 0 {
+		for _, o := range organizations {
+			owner = o.Login
+			variables := map[string]interface{}{
+				"owner": graphql.String(owner),
+				"page":  (*graphql.String)(nil),
+				"ref":   graphql.String("HEAD:.github/workflows"),
 			}
 
-			// sleep for 1 second to avoid rate limiting
-			time.Sleep(1 * time.Second)
+			var i = 1
+			for {
+				sp.Suffix = fmt.Sprintf(
+					" fetching actions report %s %s",
+					utils.Cyan(owner),
+					utils.HiBlack(fmt.Sprintf("(page %d)", i)),
+				)
 
-			variables["page"] = &ActionUsesQuery.RepositoryOwner.Repositories.PageInfo.EndCursor
-			i++
-		}
+				graphqlClient.Query("ActionUses", &ActionUsesQuery, variables)
+				aur = append(aur, ActionUsesQuery.RepositoryOwner.Repositories.Nodes...)
 
-		for _, r := range aur {
-			// skip if repo is archived or fork
-			if r.IsArchived || r.IsFork {
-				continue
-			}
-
-			// skip if repo has no workflows
-			if len(r.Object.Tree.Entries) == 0 {
-				continue
-			}
-
-			var wfs = []ActionWorkflow{}
-			for _, e := range r.Object.Tree.Entries {
-				// skip if not a yml|yaml file
-				if _, ok := ce[e.Extension]; !ok {
-					continue
+				if !ActionUsesQuery.RepositoryOwner.Repositories.PageInfo.HasNextPage {
+					break
 				}
 
-				text := e.Object.Blob.Text
+				// sleep for 1 second to avoid rate limiting
+				time.Sleep(1 * time.Second)
 
-				// get Action uses
-				var wu WorkflowUses
-				if err := yaml.Unmarshal([]byte(text), &wu); err != nil && !silent {
-					fmt.Println(
-						utils.Red(
-							fmt.Sprintf(
-								"\nerror: parsing https://%s/%s/blob/HEAD/%s",
-								hostname,
-								r.NameWithOwner, e.Path,
-							),
+				variables["page"] = &ActionUsesQuery.RepositoryOwner.Repositories.PageInfo.EndCursor
+				i++
+			}
+		}
+	}
+
+	for _, r := range aur {
+		// skip if repo is archived or fork
+		if r.IsArchived || r.IsFork {
+			continue
+		}
+
+		// skip if repo has no workflows
+		if len(r.Object.Tree.Entries) == 0 {
+			continue
+		}
+
+		var wfs = []ActionWorkflow{}
+		for _, e := range r.Object.Tree.Entries {
+			// skip if not a yml|yaml file
+			if _, ok := ce[e.Extension]; !ok {
+				continue
+			}
+
+			text := e.Object.Blob.Text
+
+			// get Action uses
+			var wu WorkflowUses
+			if err := yaml.Unmarshal([]byte(text), &wu); err != nil && !silent {
+				fmt.Println(
+					utils.Red(
+						fmt.Sprintf(
+							"\nerror: parsing https://%s/%s/blob/HEAD/%s",
+							hostname,
+							r.NameWithOwner, e.Path,
 						),
-					)
-				}
+					),
+				)
+			}
 
-				var uses []ActionUses
-				for _, job := range wu.Jobs {
-					for _, step := range job.Steps {
-						if step.Uses != "" && excludeGitHubAuthored(step.Uses) {
-							a := strings.Split(step.Uses, "@")
+			var uses []ActionUses
+			for _, job := range wu.Jobs {
+				for _, step := range job.Steps {
+					if step.Uses != "" && excludeGitHubAuthored(step.Uses) {
+						a := strings.Split(step.Uses, "@")
 
-							var an string
-							var av string
-							var url string
+						var an string
+						var av string
+						var url string
 
-							an = a[0]
-							if len(a) == 2 {
-								av = a[1]
-								url = fmt.Sprintf(
-									"https://%s/%s/tree/%s",
-									hostname,
-									an,
-									av,
-								)
-							} else {
-								url = fmt.Sprintf(
-									"https://%s/%s/tree/HEAD",
-									hostname,
-									an,
-								)
-							}
-
-							if strings.Contains(url, "./") {
-								url = fmt.Sprintf(
-									"https://%s/%s/%s/tree/HEAD/%s",
-									hostname,
-									r.Owner.Login,
-									r.Name,
-									strings.ReplaceAll(an, "./", ""),
-								)
-							}
-
-							uses = append(uses, ActionUses{
-								Action:  an,
-								Version: av,
-								URL:     url,
-							})
+						an = a[0]
+						if len(a) == 2 {
+							av = a[1]
+							url = fmt.Sprintf(
+								"https://%s/%s/tree/%s",
+								hostname,
+								an,
+								av,
+							)
+						} else {
+							url = fmt.Sprintf(
+								"https://%s/%s/tree/HEAD",
+								hostname,
+								an,
+							)
 						}
+
+						if strings.Contains(url, "./") {
+							url = fmt.Sprintf(
+								"https://%s/%s/%s/tree/HEAD/%s",
+								hostname,
+								r.Owner.Login,
+								r.Name,
+								strings.ReplaceAll(an, "./", ""),
+							)
+						}
+
+						uses = append(uses, ActionUses{
+							Action:  an,
+							Version: av,
+							URL:     url,
+						})
 					}
 				}
-
-				// get Action permissions
-				var wp ActionPermissions
-				if err := yaml.Unmarshal([]byte(text), &wp); err != nil && !silent {
-					fmt.Println(
-						utils.Red(
-							fmt.Sprintf(
-								"\nerror: parsing https://%s/%s/blob/HEAD/%s",
-								hostname,
-								r.NameWithOwner, e.Path,
-							),
-						),
-					)
-				}
-
-				var permissions []string
-				// if permissions are defined at the workflow level
-				if wp.Permissions != nil {
-					permissions = append(permissions, getPermissions(wp.Permissions)...)
-				}
-
-				// if permissions are defined at the job level
-				for _, job := range wp.Jobs {
-					permissions = append(permissions, getPermissions(job.Permissions)...)
-				}
-
-				// put it all together
-				wfs = append(wfs, ActionWorkflow{
-					Path: e.Path,
-					URL: fmt.Sprintf(
-						"https://%s/%s/%s/blob/HEAD/%s",
-						hostname,
-						r.Owner.Login,
-						r.Name,
-						e.Path,
-					),
-					Uses:        uniqueUses(uses),
-					Permissions: uniquePermissions(permissions),
-				})
 			}
 
-			res = append(res, ActionUsesReport{
-				Owner:     r.Owner.Login,
-				Repo:      r.Name,
-				Workflows: wfs,
+			// get Action permissions
+			var wp ActionPermissions
+			if err := yaml.Unmarshal([]byte(text), &wp); err != nil && !silent {
+				fmt.Println(
+					utils.Red(
+						fmt.Sprintf(
+							"\nerror: parsing https://%s/%s/blob/HEAD/%s",
+							hostname,
+							r.NameWithOwner, e.Path,
+						),
+					),
+				)
+			}
+
+			var permissions []string
+			// if permissions are defined at the workflow level
+			if wp.Permissions != nil {
+				permissions = append(permissions, getPermissions(wp.Permissions)...)
+			}
+
+			// if permissions are defined at the job level
+			for _, job := range wp.Jobs {
+				permissions = append(permissions, getPermissions(job.Permissions)...)
+			}
+
+			// put it all together
+			wfs = append(wfs, ActionWorkflow{
+				Path: e.Path,
+				URL: fmt.Sprintf(
+					"https://%s/%s/%s/blob/HEAD/%s",
+					hostname,
+					r.Owner.Login,
+					r.Name,
+					e.Path,
+				),
+				Uses:        uniqueUses(uses),
+				Permissions: uniquePermissions(permissions),
 			})
 		}
 
-		// sleep for 1 second to avoid rate limiting
-		time.Sleep(1 * time.Second)
+		res = append(res, ActionUsesReport{
+			Owner:     r.Owner.Login,
+			Repo:      r.Name,
+			Workflows: wfs,
+		})
 	}
+
+	// sleep for 1 second to avoid rate limiting
+	time.Sleep(1 * time.Second)
 
 	sp.Stop()
 
