@@ -23,5 +23,5 @@ jobs:
 
       - uses: cli/gh-extension-precompile@v2.0.0
         with:
-          go_version: 1.22.x
+          go_version_file: go.mod
           gpg_fingerprint: ${{ steps.gpg.outputs.fingerprint }}
