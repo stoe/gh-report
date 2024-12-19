@@ -1,3 +1,5 @@
+version: 2
+
 project_name: gh_report
 
 before:
@@ -32,7 +34,7 @@ signs:
   - artifacts: checksum
 
 snapshot:
-  name_template: "{{ incpatch .Version }}"
+  version_template: "{{ incpatch .Version }}"
 
 changelog:
   use: github-native
