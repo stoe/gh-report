@@ -29,10 +29,9 @@ import (
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/briandowns/spinner"
-	"github.com/cli/go-gh"
-	"github.com/cli/go-gh/pkg/api"
-	"github.com/cli/go-gh/pkg/auth"
-	"github.com/cli/go-gh/pkg/repository"
+	"github.com/cli/go-gh/v2/pkg/api"
+	"github.com/cli/go-gh/v2/pkg/auth"
+	"github.com/cli/go-gh/v2/pkg/repository"
 	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
 	"github.com/stoe/gh-report/internal/utils"
@@ -58,8 +57,8 @@ var (
 		Type  string `json:"type"`
 	}
 
-	restClient    api.RESTClient
-	graphqlClient api.GQLClient
+	restClient    *api.RESTClient
+	graphqlClient *api.GraphQLClient
 
 	sp = spinner.New(spinner.CharSets[14], 40*time.Millisecond)
 
@@ -172,22 +171,22 @@ func initConfig() {
 		opts.AuthToken = t
 	}
 
-	restClient, _ = gh.RESTClient(&opts)
-	graphqlClient, _ = gh.GQLClient(&opts)
+	restClient, _ = api.NewRESTClient(opts)
+	graphqlClient, _ = api.NewGraphQLClient(opts)
 }
 
 func run(cmd *cobra.Command, args []string) (err error) {
 	if enterprise == "" && owner == "" && repo == "" {
 		var r repository.Repository
 
-		r, err = gh.CurrentRepository()
+		r, err = repository.Current()
 
 		if err != nil {
 			return err
 		}
 
-		owner = r.Owner()
-		repo = r.Name()
+		owner = r.Owner
+		repo = r.Name
 	} else if strings.Contains(repo, "/") && owner == "" {
 		r := strings.Split(repo, "/")
 
