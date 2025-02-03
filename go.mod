@@ -4,8 +4,8 @@ go 1.22
 
 require (
 	github.com/MakeNowJust/heredoc v1.0.0
-	github.com/briandowns/spinner v1.23.1
-	github.com/cli/go-gh/v2 v2.11.1
+	github.com/briandowns/spinner v1.23.2
+	github.com/cli/go-gh/v2 v2.11.2
 	github.com/fatih/color v1.18.0
 	github.com/pterm/pterm v0.12.80
 	github.com/shurcooL/graphql v0.0.0-20230722043721-ed46e5a46466
