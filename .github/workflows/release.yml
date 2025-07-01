@@ -15,13 +15,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4.2.2
 
-      - uses: crazy-max/ghaction-import-gpg@v6.2.0
+      - uses: crazy-max/ghaction-import-gpg@v6.3.0
         id: gpg
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
-      - uses: cli/gh-extension-precompile@v2.0.0
+      - uses: cli/gh-extension-precompile@v2.1.0
         with:
           go_version_file: go.mod
           gpg_fingerprint: ${{ steps.gpg.outputs.fingerprint }}
