@@ -5,7 +5,7 @@ updates:
     schedule:
       interval: 'monthly'
     groups:
-      all-dependencies:
+      actions:
         patterns:
           - '*'
     commit-message:
@@ -13,12 +13,12 @@ updates:
     labels:
       - 'github-action :robot:'
 
-  - package-ecosystem: 'gomod'
+  - package-ecosystem: 'go'
     directory: '/'
     schedule:
       interval: 'monthly'
     groups:
-      all-dependencies:
+      go:
         patterns:
           - '*'
     commit-message:
