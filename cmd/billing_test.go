@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -82,22 +81,22 @@ func Test_buildBillingQueryParams(t *testing.T) {
 		billingYear = originalYear
 	}()
 
-	t.Run("non-storage billing returns empty string", func(t *testing.T) {
+	t.Run("user account returns empty string", func(t *testing.T) {
 		billingMonth = ""
 		billingYear = ""
-		result := buildBillingQueryParams(false)
+		result := buildBillingQueryParams("user")
 		if result != "" {
-			t.Errorf("Expected empty string for non-storage, got %s", result)
+			t.Errorf("Expected empty string for user account, got %s", result)
 		}
 	})
 
-	t.Run("storage billing with no params defaults to current month and year", func(t *testing.T) {
+	t.Run("organization account with no params defaults to current month and year", func(t *testing.T) {
 		billingMonth = ""
 		billingYear = ""
-		result := buildBillingQueryParams(true)
+		result := buildBillingQueryParams("organization")
 
 		now := time.Now()
-		expectedMonth := now.Format("2006-01")
+		expectedMonth := now.Format("01") // MM format
 		expectedYear := now.Format("2006")
 
 		if !strings.Contains(result, "month="+expectedMonth) {
@@ -108,47 +107,75 @@ func Test_buildBillingQueryParams(t *testing.T) {
 		}
 	})
 
-	t.Run("storage billing with custom month and year", func(t *testing.T) {
+	t.Run("enterprise account with no params defaults to current month and year", func(t *testing.T) {
+		billingMonth = ""
+		billingYear = ""
+		result := buildBillingQueryParams("enterprise")
+
+		now := time.Now()
+		expectedMonth := now.Format("01") // MM format
+		expectedYear := now.Format("2006")
+
+		if !strings.Contains(result, "month="+expectedMonth) {
+			t.Errorf("Expected result to contain month=%s, got %s", expectedMonth, result)
+		}
+		if !strings.Contains(result, "year="+expectedYear) {
+			t.Errorf("Expected result to contain year=%s, got %s", expectedYear, result)
+		}
+	})
+
+	t.Run("organization account with custom month and year", func(t *testing.T) {
 		billingMonth = "12"
 		billingYear = "2025"
-		result := buildBillingQueryParams(true)
+		result := buildBillingQueryParams("organization")
 
-		if !strings.Contains(result, "month=2025-12") {
-			t.Errorf("Expected result to contain month=2025-12, got %s", result)
+		if !strings.Contains(result, "month=12") {
+			t.Errorf("Expected result to contain month=12, got %s", result)
 		}
 		if !strings.Contains(result, "year=2025") {
 			t.Errorf("Expected result to contain year=2025, got %s", result)
 		}
 	})
 
-	t.Run("storage billing with only custom month defaults to current year", func(t *testing.T) {
+	t.Run("organization account with single-digit month gets zero-padded", func(t *testing.T) {
+		billingMonth = "6"
+		billingYear = "2025"
+		result := buildBillingQueryParams("organization")
+
+		if !strings.Contains(result, "month=06") {
+			t.Errorf("Expected result to contain month=06, got %s", result)
+		}
+		if !strings.Contains(result, "year=2025") {
+			t.Errorf("Expected result to contain year=2025, got %s", result)
+		}
+	})
+
+	t.Run("organization account with only custom month defaults to current year", func(t *testing.T) {
 		billingMonth = "06"
 		billingYear = ""
-		result := buildBillingQueryParams(true)
+		result := buildBillingQueryParams("organization")
 
 		now := time.Now()
 		expectedYear := now.Format("2006")
-		expectedMonth := expectedYear + "-06"
 
-		if !strings.Contains(result, "month="+expectedMonth) {
-			t.Errorf("Expected result to contain month=%s, got %s", expectedMonth, result)
+		if !strings.Contains(result, "month=06") {
+			t.Errorf("Expected result to contain month=06, got %s", result)
 		}
 		if !strings.Contains(result, "year="+expectedYear) {
 			t.Errorf("Expected result to contain year=%s, got %s", expectedYear, result)
 		}
 	})
 
-	t.Run("storage billing with only custom year", func(t *testing.T) {
+	t.Run("organization account with only custom year defaults to current month", func(t *testing.T) {
 		billingMonth = ""
 		billingYear = "2024"
-		result := buildBillingQueryParams(true)
+		result := buildBillingQueryParams("organization")
 
 		now := time.Now()
 		expectedMonth := now.Format("01") // Current month in MM format
-		expectedMonthParam := fmt.Sprintf("2024-%s", expectedMonth)
 
-		if !strings.Contains(result, "month="+expectedMonthParam) {
-			t.Errorf("Expected result to contain month=%s, got %s", expectedMonthParam, result)
+		if !strings.Contains(result, "month="+expectedMonth) {
+			t.Errorf("Expected result to contain month=%s, got %s", expectedMonth, result)
 		}
 		if !strings.Contains(result, "year=2024") {
 			t.Errorf("Expected result to contain year=2024, got %s", result)
@@ -158,16 +185,25 @@ func Test_buildBillingQueryParams(t *testing.T) {
 
 func Test_aggregateActionsUsage(t *testing.T) {
 	usageItems := []UsageItem{
-		{Product: "Actions", UnitType: "minutes", SKU: "Actions Linux", Quantity: 100},
-		{Product: "Actions", UnitType: "minutes", SKU: "Actions macOS", Quantity: 50},
-		{Product: "Actions", UnitType: "minutes", SKU: "Actions Windows", Quantity: 75},
-		{Product: "Packages", UnitType: "gigabytes", SKU: "Packages data transfer", Quantity: 10},
+		{Product: "Actions", UnitType: "minutes", SKU: "Actions Linux", GrossQuantity: 100, NetQuantity: 95, DiscountQuantity: 5, GrossAmount: 0.60, DiscountAmount: 0.03, NetAmount: 0.57},
+		{Product: "Actions", UnitType: "minutes", SKU: "Actions macOS", GrossQuantity: 50, NetQuantity: 48, DiscountQuantity: 2, GrossAmount: 3.10, DiscountAmount: 0.12, NetAmount: 2.98},
+		{Product: "Actions", UnitType: "minutes", SKU: "Actions Windows", GrossQuantity: 75, NetQuantity: 70, DiscountQuantity: 5, GrossAmount: 0.75, DiscountAmount: 0.05, NetAmount: 0.70},
+		{Product: "Packages", UnitType: "gigabytes", SKU: "Packages data transfer", GrossQuantity: 10, NetQuantity: 10, DiscountQuantity: 0, GrossAmount: 0.875, DiscountAmount: 0, NetAmount: 0.875},
 	}
 
 	result := aggregateActionsUsage(usageItems)
 
 	if result.TotalMinutesUsed != 225 {
 		t.Errorf("Expected TotalMinutesUsed to be 225, got %.2f", result.TotalMinutesUsed)
+	}
+	if result.TotalPaidMinutesUsed != 213 {
+		t.Errorf("Expected TotalPaidMinutesUsed to be 213, got %.2f", result.TotalPaidMinutesUsed)
+	}
+	if result.IncludedMinutes != 12 {
+		t.Errorf("Expected IncludedMinutes to be 12, got %.2f", result.IncludedMinutes)
+	}
+	if result.NetAmount != 4.25 {
+		t.Errorf("Expected NetAmount to be 4.25, got %.2f", result.NetAmount)
 	}
 	if result.MinutesUsedBreakdown.Ubuntu != 100 {
 		t.Errorf("Expected Ubuntu minutes to be 100, got %.2f", result.MinutesUsedBreakdown.Ubuntu)
@@ -182,9 +218,9 @@ func Test_aggregateActionsUsage(t *testing.T) {
 
 func Test_aggregatePackagesUsage(t *testing.T) {
 	usageItems := []UsageItem{
-		{Product: "Packages", UnitType: "gigabytes", SKU: "Packages data transfer", Quantity: 100},
-		{Product: "Packages", UnitType: "gigabytes", SKU: "Packages data transfer", Quantity: 50},
-		{Product: "Actions", UnitType: "minutes", SKU: "Actions Linux", Quantity: 200},
+		{Product: "Packages", UnitType: "gigabytes", SKU: "Packages data transfer", GrossQuantity: 100, NetQuantity: 95, DiscountQuantity: 5, GrossAmount: 8.75, DiscountAmount: 0.44, NetAmount: 8.31},
+		{Product: "Packages", UnitType: "gigabytes", SKU: "Packages data transfer", GrossQuantity: 50, NetQuantity: 50, DiscountQuantity: 0, GrossAmount: 4.38, DiscountAmount: 0, NetAmount: 4.38},
+		{Product: "Actions", UnitType: "minutes", SKU: "Actions Linux", GrossQuantity: 200, NetQuantity: 190, DiscountQuantity: 10, GrossAmount: 1.20, DiscountAmount: 0.06, NetAmount: 1.14},
 	}
 
 	result := aggregatePackagesUsage(usageItems)
@@ -192,18 +228,29 @@ func Test_aggregatePackagesUsage(t *testing.T) {
 	if result.TotalGigabytesBandwidthUsed != 150 {
 		t.Errorf("Expected TotalGigabytesBandwidthUsed to be 150, got %.2f", result.TotalGigabytesBandwidthUsed)
 	}
+	if result.TotalPaidGigabytesBandwidthUsed != 145 {
+		t.Errorf("Expected TotalPaidGigabytesBandwidthUsed to be 145, got %.2f", result.TotalPaidGigabytesBandwidthUsed)
+	}
+	if result.IncludedGigabytesBandwidth != 5 {
+		t.Errorf("Expected IncludedGigabytesBandwidth to be 5, got %.2f", result.IncludedGigabytesBandwidth)
+	}
+	// Use tolerance-based comparison for floating point
+	tolerance := 0.001
+	if result.NetAmount < 12.69-tolerance || result.NetAmount > 12.69+tolerance {
+		t.Errorf("Expected NetAmount to be approximately 12.69, got %.10f", result.NetAmount)
+	}
 }
 
 func Test_aggregateStorageUsage(t *testing.T) {
 	usageItems := []UsageItem{
-		{Product: "Actions", UnitType: "GigabyteHours", SKU: "Actions storage", Quantity: 7300},
-		{Product: "Packages", UnitType: "GigabyteHours", SKU: "Packages storage", Quantity: 3650},
-		{Product: "Actions", UnitType: "minutes", SKU: "Actions Linux", Quantity: 100},
+		{Product: "Actions", UnitType: "gigabyte-hours", SKU: "Actions storage", GrossQuantity: 7300, NetQuantity: 7200, DiscountQuantity: 100, GrossAmount: 2.45, DiscountAmount: 0.03, NetAmount: 2.42},
+		{Product: "Packages", UnitType: "gigabyte-hours", SKU: "Packages storage", GrossQuantity: 3650, NetQuantity: 3650, DiscountQuantity: 0, GrossAmount: 1.23, DiscountAmount: 0, NetAmount: 1.23},
+		{Product: "Actions", UnitType: "minutes", SKU: "Actions Linux", GrossQuantity: 100, NetQuantity: 95, DiscountQuantity: 5, GrossAmount: 0.60, DiscountAmount: 0.03, NetAmount: 0.57},
 	}
 
 	result := aggregateStorageUsage(usageItems)
 
-	// Total GigabyteHours: 7300 (Actions) + 3650 (Packages) = 10950
+	// Total gigabyte-hours: 7300 (Actions) + 3650 (Packages) = 10950
 	if result.EstimatedStorageForMonth != 10950 {
 		t.Errorf("Expected EstimatedStorageForMonth to be 10950, got %.2f", result.EstimatedStorageForMonth)
 	}
@@ -215,11 +262,15 @@ func Test_aggregateStorageUsage(t *testing.T) {
 	if result.PackagesStorageGB != 3650 {
 		t.Errorf("Expected PackagesStorageGB to be 3650, got %.2f", result.PackagesStorageGB)
 	}
+
+	if result.NetAmount != 3.65 {
+		t.Errorf("Expected NetAmount to be 3.65, got %.2f", result.NetAmount)
+	}
 }
 
 func Test_aggregateStorageUsage_Empty(t *testing.T) {
 	usageItems := []UsageItem{
-		{Product: "Actions", UnitType: "minutes", SKU: "Actions Linux", Quantity: 100},
+		{Product: "Actions", UnitType: "minutes", SKU: "Actions Linux", GrossQuantity: 100, NetQuantity: 95, DiscountQuantity: 5, GrossAmount: 0.60, DiscountAmount: 0.03, NetAmount: 0.57},
 	}
 
 	result := aggregateStorageUsage(usageItems)
