@@ -43,9 +43,15 @@ func SaveJsonReport(p string, data interface{}) (err error) {
 	defer file.Close()
 
 	encoder := json.NewEncoder(file)
-	encoder.Encode(data)
+	encoder.SetIndent("", "  ")
+	// Prevent scientific notation for small numbers
+	encoder.SetEscapeHTML(false)
+
+	if err := encoder.Encode(data); err != nil {
+		return fmt.Errorf("failed to encode JSON, error: %w", err)
+	}
 
 	fmt.Fprintf(color.Output, "%s %s\n", HiBlack("JSON saved to:"), p)
 
-	return err
+	return nil
 }

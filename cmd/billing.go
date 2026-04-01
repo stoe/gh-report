@@ -81,24 +81,35 @@ type (
 
 	// New unified billing usage response structure
 	BillingUsageResponse struct {
-		UsageItems []UsageItem `json:"usageItems"`
+		TimePeriod   TimePeriod  `json:"timePeriod"`
+		Organization string      `json:"organization,omitempty"`
+		Enterprise   string      `json:"enterprise,omitempty"`
+		UsageItems   []UsageItem `json:"usageItems"`
+	}
+
+	TimePeriod struct {
+		Year  int `json:"year"`
+		Month int `json:"month"`
 	}
 
 	UsageItem struct {
-		Date             string  `json:"date"`
+		Date             string  `json:"date,omitempty"`
 		Product          string  `json:"product"`
 		SKU              string  `json:"sku"`
-		Quantity         float64 `json:"quantity"`
+		GrossQuantity    float64 `json:"grossQuantity"`
+		DiscountQuantity float64 `json:"discountQuantity"`
+		NetQuantity      float64 `json:"netQuantity"`
 		UnitType         string  `json:"unitType"`
 		PricePerUnit     float64 `json:"pricePerUnit"`
 		GrossAmount      float64 `json:"grossAmount"`
 		DiscountAmount   float64 `json:"discountAmount"`
 		NetAmount        float64 `json:"netAmount"`
-		OrganizationName string  `json:"organizationName"`
-		RepositoryName   string  `json:"repositoryName"`
+		OrganizationName string  `json:"organizationName,omitempty"`
+		RepositoryName   string  `json:"repositoryName,omitempty"`
 	}
 
 	ActionsBilling struct {
+		// Quantity fields (in minutes)
 		TotalMinutesUsed     float64 `json:"total_minutes_used"`
 		TotalPaidMinutesUsed float64 `json:"total_paid_minutes_used"`
 		IncludedMinutes      float64 `json:"included_minutes"`
@@ -107,12 +118,21 @@ type (
 			Ubuntu  float64 `json:"UBUNTU"`
 			Windows float64 `json:"WINDOWS"`
 		} `json:"minutes_used_breakdown"`
+		// Cost fields (in dollars)
+		GrossAmount    float64 `json:"gross_amount"`
+		DiscountAmount float64 `json:"discount_amount"`
+		NetAmount      float64 `json:"net_amount"`
 	}
 
 	PackagesBilling struct {
+		// Quantity fields (in gigabytes)
 		TotalGigabytesBandwidthUsed     float64 `json:"total_gigabytes_bandwidth_used"`
 		TotalPaidGigabytesBandwidthUsed float64 `json:"total_paid_gigabytes_bandwidth_used"`
 		IncludedGigabytesBandwidth      float64 `json:"included_gigabytes_bandwidth"`
+		// Cost fields (in dollars)
+		GrossAmount    float64 `json:"gross_amount"`
+		DiscountAmount float64 `json:"discount_amount"`
+		NetAmount      float64 `json:"net_amount"`
 	}
 
 	SecurityBilling struct {
@@ -137,13 +157,21 @@ type (
 	}
 
 	StorageBilling struct {
-		DaysLeftInBillingCycle       int     `json:"days_left_in_billing_cycle"`
-		EstimatedPaidStorageForMonth float64 `json:"estimated_paid_storage_for_month"`
-		EstimatedStorageForMonth     float64 `json:"estimated_storage_for_month"`
-		ActionsStorageGB             float64 `json:"actions_storage_gb"`
-		PackagesStorageGB            float64 `json:"packages_storage_gb"`
-		ActionsStorageNetCost        float64 `json:"actions_storage_net_cost"`
-		PackagesStorageNetCost       float64 `json:"packages_storage_net_cost"`
+		DaysLeftInBillingCycle int `json:"days_left_in_billing_cycle"`
+		// Quantity fields (in gigabyte-hours)
+		EstimatedStorageForMonth float64 `json:"estimated_storage_for_month"`
+		ActionsStorageGB         float64 `json:"actions_storage_gb"`
+		PackagesStorageGB        float64 `json:"packages_storage_gb"`
+		// Cost fields (in dollars)
+		GrossAmount                   float64 `json:"gross_amount"`
+		DiscountAmount                float64 `json:"discount_amount"`
+		NetAmount                     float64 `json:"net_amount"`
+		ActionsStorageGrossAmount     float64 `json:"actions_storage_gross_amount"`
+		ActionsStorageDiscountAmount  float64 `json:"actions_storage_discount_amount"`
+		ActionsStorageNetAmount       float64 `json:"actions_storage_net_amount"`
+		PackagesStorageGrossAmount    float64 `json:"packages_storage_gross_amount"`
+		PackagesStorageDiscountAmount float64 `json:"packages_storage_discount_amount"`
+		PackagesStorageNetAmount      float64 `json:"packages_storage_net_amount"`
 	}
 
 	BillingReportJSON struct {
@@ -162,6 +190,27 @@ type (
 		StorageDiscountAmount      float64 `json:"storage_discount_amount,omitempty"`
 	}
 )
+
+// MarshalJSON implements custom JSON marshaling for BillingReportJSON
+// to prevent scientific notation for small float values
+func (b BillingReportJSON) MarshalJSON() ([]byte, error) {
+	type Alias BillingReportJSON
+	return []byte(fmt.Sprintf(`{"account":"%s","action_minutes_used":%.6f,"action_net_cost":%.6f,"action_discount_amount":%.6f,"gigabytes_bandwidth_used":%.6f,"packages_net_cost":%.6f,"packages_discount_amount":%.6f,"advanced_security_committers":%d,"estimated_storage_for_month":%.10f,"actions_storage_gb":%.10f,"packages_storage_gb":%.10f,"storage_net_cost":%.10f,"storage_discount_amount":%.10f}`,
+		b.Account,
+		b.ActionMinutesUsed,
+		b.ActionNetCost,
+		b.ActionDiscountAmount,
+		b.GigabytesBandwidthUsed,
+		b.PackagesNetCost,
+		b.PackagesDiscountAmount,
+		b.AdvancedSecurityCommitters,
+		b.EstimatedStorageForMonth,
+		b.ActionsStorageGB,
+		b.PackagesStorageGB,
+		b.StorageNetCost,
+		b.StorageDiscountAmount,
+	)), nil
+}
 
 func init() {
 	BillingCmd.PersistentFlags().BoolVar(&all, "all", true, "Get all billing data")
@@ -203,16 +252,25 @@ func aggregateActionsUsage(usageItems []UsageItem) ActionsBilling {
 	var result ActionsBilling
 	for _, item := range usageItems {
 		if item.Product == "Actions" && item.UnitType == "minutes" {
-			result.TotalMinutesUsed += item.Quantity
-			result.TotalPaidMinutesUsed += item.NetAmount // Dollar amount paid
-			result.IncludedMinutes += item.DiscountAmount // Dollar amount saved
-			// Map SKU to breakdown
-			if strings.Contains(strings.ToUpper(item.SKU), "MACOS") || strings.Contains(strings.ToUpper(item.SKU), "MAC") {
-				result.MinutesUsedBreakdown.MacOS += item.Quantity
-			} else if strings.Contains(strings.ToUpper(item.SKU), "WINDOWS") {
-				result.MinutesUsedBreakdown.Windows += item.Quantity
-			} else if strings.Contains(strings.ToUpper(item.SKU), "UBUNTU") || strings.Contains(strings.ToUpper(item.SKU), "LINUX") {
-				result.MinutesUsedBreakdown.Ubuntu += item.Quantity
+			// Aggregate quantities (minutes)
+			result.TotalMinutesUsed += item.GrossQuantity
+			result.TotalPaidMinutesUsed += item.NetQuantity
+			result.IncludedMinutes += item.DiscountQuantity
+
+			// Aggregate costs (dollars)
+			result.GrossAmount += item.GrossAmount
+			result.DiscountAmount += item.DiscountAmount
+			result.NetAmount += item.NetAmount
+
+			// Map SKU to breakdown (by gross quantity)
+			// Note: SKU string handling should be case-insensitive
+			sku := strings.ToUpper(item.SKU)
+			if strings.Contains(sku, "MACOS") || strings.Contains(sku, "MAC") {
+				result.MinutesUsedBreakdown.MacOS += item.GrossQuantity
+			} else if strings.Contains(sku, "WINDOWS") {
+				result.MinutesUsedBreakdown.Windows += item.GrossQuantity
+			} else if strings.Contains(sku, "UBUNTU") || strings.Contains(sku, "LINUX") {
+				result.MinutesUsedBreakdown.Ubuntu += item.GrossQuantity
 			}
 		}
 	}
@@ -222,10 +280,18 @@ func aggregateActionsUsage(usageItems []UsageItem) ActionsBilling {
 func aggregatePackagesUsage(usageItems []UsageItem) PackagesBilling {
 	var result PackagesBilling
 	for _, item := range usageItems {
-		if item.Product == "Packages" && item.UnitType == "gigabytes" {
-			result.TotalGigabytesBandwidthUsed += item.Quantity
-			result.TotalPaidGigabytesBandwidthUsed += item.NetAmount // Dollar amount paid
-			result.IncludedGigabytesBandwidth += item.DiscountAmount // Dollar amount saved
+		// Note: Packages bandwidth is reported in the API, but storage uses different unitType
+		if item.Product == "Packages" {
+			if item.UnitType == "gigabytes" {
+				// Aggregate bandwidth quantities (gigabytes)
+				result.TotalGigabytesBandwidthUsed += item.GrossQuantity
+				result.TotalPaidGigabytesBandwidthUsed += item.NetQuantity
+				result.IncludedGigabytesBandwidth += item.DiscountQuantity
+			}
+			// Aggregate all Packages costs regardless of unitType
+			result.GrossAmount += item.GrossAmount
+			result.DiscountAmount += item.DiscountAmount
+			result.NetAmount += item.NetAmount
 		}
 	}
 	return result
@@ -236,21 +302,48 @@ func aggregateStorageUsage(usageItems []UsageItem) StorageBilling {
 
 	// Separate Actions and Packages storage
 	for _, item := range usageItems {
-		if item.UnitType == "GigabyteHours" {
+		if item.UnitType == "gigabyte-hours" {
 			switch item.Product {
 			case "Actions":
-				result.ActionsStorageGB += item.Quantity
-				result.ActionsStorageNetCost += item.NetAmount
+				result.ActionsStorageGB += item.GrossQuantity
+				result.ActionsStorageGrossAmount += item.GrossAmount
+				result.ActionsStorageDiscountAmount += item.DiscountAmount
+				result.ActionsStorageNetAmount += item.NetAmount
 			case "Packages":
-				result.PackagesStorageGB += item.Quantity
-				result.PackagesStorageNetCost += item.NetAmount
+				result.PackagesStorageGB += item.GrossQuantity
+				result.PackagesStorageGrossAmount += item.GrossAmount
+				result.PackagesStorageDiscountAmount += item.DiscountAmount
+				result.PackagesStorageNetAmount += item.NetAmount
+			case "Git LFS":
+				// Git LFS storage is tracked separately but included in packages totals
+				result.PackagesStorageGB += item.GrossQuantity
+				result.PackagesStorageGrossAmount += item.GrossAmount
+				result.PackagesStorageDiscountAmount += item.DiscountAmount
+				result.PackagesStorageNetAmount += item.NetAmount
+			case "Shared Storage":
+				if strings.Contains(strings.ToLower(item.SKU), "actions") {
+					result.ActionsStorageGB += item.GrossQuantity
+					result.ActionsStorageGrossAmount += item.GrossAmount
+					result.ActionsStorageDiscountAmount += item.DiscountAmount
+					result.ActionsStorageNetAmount += item.NetAmount
+				} else {
+					// Default to packages storage if not explicitly actions
+					result.PackagesStorageGB += item.GrossQuantity
+					result.PackagesStorageGrossAmount += item.GrossAmount
+					result.PackagesStorageDiscountAmount += item.DiscountAmount
+					result.PackagesStorageNetAmount += item.NetAmount
+				}
 			}
 		}
 	}
 
-	// Total storage is sum of both
+	// Total storage quantities (gigabyte-hours)
 	result.EstimatedStorageForMonth = result.ActionsStorageGB + result.PackagesStorageGB
-	result.EstimatedPaidStorageForMonth = result.ActionsStorageNetCost + result.PackagesStorageNetCost
+
+	// Total storage costs (dollars)
+	result.GrossAmount = result.ActionsStorageGrossAmount + result.PackagesStorageGrossAmount
+	result.DiscountAmount = result.ActionsStorageDiscountAmount + result.PackagesStorageDiscountAmount
+	result.NetAmount = result.ActionsStorageNetAmount + result.PackagesStorageNetAmount
 
 	return result
 }
@@ -271,18 +364,18 @@ func buildBillingEndpoint(accountType, login, path string) string {
 	}
 }
 
-// buildBillingQueryParams constructs query parameters for storage billing API calls.
-// According to GitHub's documentation, month and year parameters are only applicable
-// for storage billing calculations. If not provided, defaults to current month and year.
+// buildBillingQueryParams constructs query parameters for billing API calls.
+// According to GitHub's documentation, month and year parameters are applicable for
+// organization and enterprise accounts. User-level accounts do not support these parameters.
+// If not provided, defaults to current month and year.
 // Month should be in MM format (e.g., "01", "12"). If month is provided without year,
 // year defaults to current year.
-// For non-storage billing (actions, packages), returns empty string.
-func buildBillingQueryParams(forStorage bool) string {
-	if !forStorage {
+func buildBillingQueryParams(accountType string) string {
+	// User accounts don't support month/year filtering on usage endpoints
+	if accountType == "user" {
 		return ""
 	}
 
-	var params []string
 	now := time.Now()
 
 	// Get year first (needed to build month parameter)
@@ -291,18 +384,24 @@ func buildBillingQueryParams(forStorage bool) string {
 		year = now.Format("2006")
 	}
 
-	// Get month and build YYYY-MM format for API
+	// Get month and ensure it's zero-padded to MM format
 	month := billingMonth
 	if month == "" {
 		month = now.Format("01") // MM format
+		// If year is not provided, use current year
+		if year == "" {
+			year = now.Format("2006")
+		}
+	} else if len(month) == 1 {
+		month = fmt.Sprintf("0%s", month) // Zero-pad single digit months
 	}
-	// Combine year and month in YYYY-MM format
-	monthParam := fmt.Sprintf("%s-%s", year, month)
-	params = append(params, fmt.Sprintf("month=%s", monthParam))
 
-	params = append(params, fmt.Sprintf("year=%s", year))
+	// If year is still empty (e.g. month was provided but year wasn't), default to current year
+	if year == "" {
+		year = now.Format("2006")
+	}
 
-	return "?" + strings.Join(params, "&")
+	return fmt.Sprintf("?month=%s&year=%s", month, year)
 }
 
 // GetBilling returns GitHub billing information
@@ -386,12 +485,29 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 			)
 
 			var usageResponse BillingUsageResponse
-			// Month and year query parameters are only for storage billing
-			endpoint := buildBillingEndpoint(account.AccountType, account.Login, "usage") + buildBillingQueryParams(storage)
+			// Use the summary endpoint: /settings/billing/usage/summary
+			// Query parameters are only supported for org/enterprise accounts
+			endpoint := buildBillingEndpoint(account.AccountType, account.Login, "usage/summary") + buildBillingQueryParams(account.AccountType)
 			if err := restClient.Get(
 				endpoint,
 				&usageResponse,
 			); err != nil {
+				if strings.Contains(err.Error(), "403") || strings.Contains(err.Error(), "404") {
+					sp.Suffix = fmt.Sprintf(
+						" fetching %s billing report %s",
+						utils.Cyan(account.Login),
+						utils.Orange("(usage data not accessible, skipping)"),
+					)
+					continue
+				}
+				if strings.Contains(err.Error(), "500") || strings.Contains(err.Error(), "502") || strings.Contains(err.Error(), "503") {
+					sp.Suffix = fmt.Sprintf(
+						" fetching %s billing report %s",
+						utils.Cyan(account.Login),
+						utils.Orange("(server error, skipping)"),
+					)
+					continue
+				}
 				return err
 			}
 
@@ -417,12 +533,15 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 				utils.HiBlack("(security data)"),
 			)
 
+			// Advanced Security endpoint - no product parameter required
+			securityEndpoint := buildBillingEndpoint(account.AccountType, account.Login, "advanced-security")
 			if err := restClient.Get(
-				buildBillingEndpoint(account.AccountType, account.Login, "advanced-security"),
+				securityEndpoint,
 				&securityBillingData,
 			); err != nil {
-				// silently ignore 403 errors
-				if strings.Contains(err.Error(), "403") {
+				// silently ignore 403 and 422 errors (not enabled or not accessible)
+				// Don't skip the entire account - just mark security as unavailable for this account
+				if strings.Contains(err.Error(), "403") || strings.Contains(err.Error(), "422") {
 					sp.Suffix = fmt.Sprintf(
 						" fetching %s billing report %s",
 						utils.Cyan(account.Login),
@@ -430,15 +549,21 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 					)
 
 					securitySkipped = true
-					continue
+				} else if strings.Contains(err.Error(), "500") || strings.Contains(err.Error(), "502") || strings.Contains(err.Error(), "503") {
+					sp.Suffix = fmt.Sprintf(
+						" fetching %s billing report %s",
+						utils.Cyan(account.Login),
+						utils.Orange("(server error, skipping)"),
+					)
+					securitySkipped = true
 				} else {
 					return err
 				}
+			} else {
+				// Advanced Security billing still uses separate endpoint
+				// sleep for 1 second to avoid rate limiting
+				time.Sleep(1 * time.Second)
 			}
-
-			// Advanced Security billing still uses separate endpoint
-			// sleep for 1 second to avoid rate limiting
-			time.Sleep(1 * time.Second)
 		}
 
 		billing = append(billing, Billing{
@@ -515,15 +640,15 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 		if actions {
 			data = append(data, fmt.Sprintf("%.2f", b.Actions.TotalMinutesUsed))
 			if showCosts {
-				data = append(data, fmt.Sprintf("%.2f", b.Actions.TotalPaidMinutesUsed))
-				data = append(data, fmt.Sprintf("%.2f", b.Actions.IncludedMinutes))
+				data = append(data, fmt.Sprintf("%.2f", b.Actions.NetAmount))
+				data = append(data, fmt.Sprintf("%.2f", b.Actions.DiscountAmount))
 			}
 		}
 		if packages {
 			data = append(data, fmt.Sprintf("%.2f", b.Packages.TotalGigabytesBandwidthUsed))
 			if showCosts {
-				data = append(data, fmt.Sprintf("%.2f", b.Packages.TotalPaidGigabytesBandwidthUsed))
-				data = append(data, fmt.Sprintf("%.2f", b.Packages.IncludedGigabytesBandwidth))
+				data = append(data, fmt.Sprintf("%.2f", b.Packages.NetAmount))
+				data = append(data, fmt.Sprintf("%.2f", b.Packages.DiscountAmount))
 			}
 		}
 		if security && !securitySkipped {
@@ -534,23 +659,23 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 			if showCosts {
 				data = append(data, fmt.Sprintf("%.2f", b.Storage.ActionsStorageGB))
 				data = append(data, fmt.Sprintf("%.2f", b.Storage.PackagesStorageGB))
-				data = append(data, fmt.Sprintf("%.2f", b.Storage.EstimatedPaidStorageForMonth))
+				data = append(data, fmt.Sprintf("%.2f", b.Storage.NetAmount))
 			}
 		}
 
 		actionsSum += b.Actions.TotalMinutesUsed
-		actionsNetCostSum += b.Actions.TotalPaidMinutesUsed
-		actionsDiscountSum += b.Actions.IncludedMinutes
+		actionsNetCostSum += b.Actions.NetAmount
+		actionsDiscountSum += b.Actions.DiscountAmount
 		packagesSum += b.Packages.TotalGigabytesBandwidthUsed
-		packagesNetCostSum += b.Packages.TotalPaidGigabytesBandwidthUsed
-		packagesDiscountSum += b.Packages.IncludedGigabytesBandwidth
+		packagesNetCostSum += b.Packages.NetAmount
+		packagesDiscountSum += b.Packages.DiscountAmount
 		if security && !securitySkipped {
 			securitySum += b.Security.TotalAdvancedSecurityCommitters
 		}
 		storageSum += b.Storage.EstimatedStorageForMonth
 		actionsStorageSum += b.Storage.ActionsStorageGB
 		packagesStorageSum += b.Storage.PackagesStorageGB
-		storageNetCostSum += b.Storage.EstimatedPaidStorageForMonth
+		storageNetCostSum += b.Storage.NetAmount
 
 		td = append(td, data)
 
@@ -561,17 +686,17 @@ func GetBilling(cmd *cobra.Command, args []string) (err error) {
 		res = append(res, BillingReportJSON{
 			Account:                    b.Organization,
 			ActionMinutesUsed:          b.Actions.TotalMinutesUsed,
-			ActionNetCost:              b.Actions.TotalPaidMinutesUsed,
-			ActionDiscountAmount:       b.Actions.IncludedMinutes,
+			ActionNetCost:              b.Actions.NetAmount,
+			ActionDiscountAmount:       b.Actions.DiscountAmount,
 			GigabytesBandwidthUsed:     b.Packages.TotalGigabytesBandwidthUsed,
-			PackagesNetCost:            b.Packages.TotalPaidGigabytesBandwidthUsed,
-			PackagesDiscountAmount:     b.Packages.IncludedGigabytesBandwidth,
+			PackagesNetCost:            b.Packages.NetAmount,
+			PackagesDiscountAmount:     b.Packages.DiscountAmount,
 			AdvancedSecurityCommitters: b.Security.TotalAdvancedSecurityCommitters,
 			EstimatedStorageForMonth:   b.Storage.EstimatedStorageForMonth,
 			ActionsStorageGB:           b.Storage.ActionsStorageGB,
 			PackagesStorageGB:          b.Storage.PackagesStorageGB,
-			StorageNetCost:             b.Storage.EstimatedPaidStorageForMonth,
-			StorageDiscountAmount:      b.Storage.ActionsStorageNetCost + b.Storage.PackagesStorageNetCost - b.Storage.EstimatedPaidStorageForMonth,
+			StorageNetCost:             b.Storage.NetAmount,
+			StorageDiscountAmount:      b.Storage.DiscountAmount,
 		})
 	}
 

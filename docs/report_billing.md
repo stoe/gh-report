@@ -15,6 +15,44 @@ continues to use its dedicated endpoint.
 report billing [flags]
 ```
 
+### Output Fields
+
+The billing report provides usage quantities and optional cost information for each account.
+
+#### Actions (`--actions`)
+
+- **action_minutes_used**: Total compute minutes used (gross quantity)
+- **action_net_cost**: Net cost in USD after discounts (with `--show-costs`)
+- **action_discount_amount**: Discount amount in USD (with `--show-costs`)
+
+Minutes are broken down by runner type (Linux/Ubuntu, macOS, Windows) and aggregated from all SKUs.
+
+#### Packages (`--packages`)
+
+- **gigabytes_bandwidth_used**: Total package bandwidth in GB (gross quantity)
+- **packages_net_cost**: Net cost in USD after discounts (with `--show-costs`)
+- **packages_discount_amount**: Discount amount in USD (with `--show-costs`)
+
+#### Storage (`--storage`)
+
+- **estimated_storage_for_month**: Total storage in gigabyte-hours (Actions + Packages)
+- **actions_storage_gb**: Actions-specific storage in gigabyte-hours (with `--show-costs`)
+- **packages_storage_gb**: Packages-specific storage in gigabyte-hours (with `--show-costs`)
+- **storage_net_cost**: Net storage cost in USD after discounts (with `--show-costs`)
+
+Storage includes Actions artifacts/caches, Packages storage, and Git LFS (tracked under packages).
+
+#### Advanced Security (`--security`)
+
+- **advanced_security_committers**: Total number of active committers using GitHub Advanced Security
+
+### Notes
+
+- Cost fields represent monetary amounts in USD
+- Quantity fields represent actual usage (minutes, gigabytes, gigabyte-hours)
+- JSON output uses fixed decimal precision to avoid scientific notation for very small values
+- Storage values under 1 GB-hour are displayed with high precision (10 decimal places)
+
 ### Options
 
 ```
@@ -46,5 +84,4 @@ report billing [flags]
 
 ### SEE ALSO
 
-* [report](report.md)	 - gh cli extension to generate reports
-
+- [report](report.md) - gh cli extension to generate reports
