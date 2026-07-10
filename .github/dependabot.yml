@@ -1,27 +1,27 @@
 version: 2
 updates:
-  - package-ecosystem: 'github-actions'
-    directory: '/'
+  - package-ecosystem: github-actions
+    directory: /
     schedule:
-      interval: 'monthly'
+      interval: monthly
     groups:
       actions:
         patterns:
-          - '*'
+          - "*"
     commit-message:
-      prefix: '⬆️ action'
+      prefix: ⬆️ action
     labels:
-      - 'github-action :robot:'
-
-  - package-ecosystem: 'go'
-    directory: '/'
+      - "github-action :robot:"
+  - package-ecosystem: gomod
+    directory: /
     schedule:
-      interval: 'monthly'
+      interval: monthly
     groups:
       go:
         patterns:
-          - '*'
+          - "*"
     commit-message:
-      prefix: '⬆️ go'
+      prefix: ⬆️ go
     labels:
-      - 'dependency :robot:'
+      - "dependency :robot:"
+      - go
